@@ -1,0 +1,88 @@
+<!-- extends base template and forms base of most other pages (not viewer) -->
+{% extends "base.html" %}
+
+{% block head %}
+<!-- Navbar including search field -->
+<div class="navbar navbar-expand">
+    <div class="container-fluid d-flex justify-content-between">
+        <!-- list for navbar items on left side-->
+        <ul class="navbar-nav list-unstyled">
+            <!-- link to home page, href covered by csp-->
+            <li class="nav-item">
+                <a href="{{ url_for('home')}}">Home</a>
+            </li>
+            <!-- link to index of all files, href covered by csp-->
+            <li class="nav-item">
+                <a href="{{ url_for('list_files')}}">Browse</a>
+            </li>
+        </ul>
+        <!-- list for navbar items on right side-->
+        <ul class="navbar-nav list-unstyled justify-content-end">
+            <li>
+                <!-- form for keyword search, sends search contents to search form app route, processed into results page-->
+                <!-- uses wtf form for secure validation using csrf key-->
+                <form method="POST" action="{{ url_for('search')}}" class="search-form">
+                    <!-- hidden field contain CSRF token -->
+                    {{ form.hidden_tag() }}
+                    <!-- form input and submission for searches -->
+                    <div class="form-row d-flex">
+                        <input type="text" name="searched" class="search-input" maxlength="100">
+                        <button type="submit" class="col-auto btn btn-light btn-lg">Search</button>
+                    </div>
+                </form>
+            </li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+<!-- Main content here -->
+{% block base_content %}
+{% endblock %}
+
+{% block footer_content %}
+<!-- footer page content created mainly from config file data -->
+<div class="container-fluid">
+    <div class="row footer-cols">
+        <div class="col-xs-12 col-md-4">
+            <!-- add Records header and links to file index search/browse all go to same place-->
+            <h4 class="footer-header">Records</h4>
+            <ul class="footer-list">
+                <li class="footer-item">
+                    <!-- link to index of all files, href covered by csp-->
+                    <a href="{{ url_for('list_files')}}">Browse</a>
+                </li>
+                <li class="footer-item">
+                    <!-- link to index of all files, href covered by csp-->
+                    <a href="{{ url_for('list_files')}}">Search</a>
+                </li>
+            </ul>
+        </div>
+        <div class="col-xs-12 col-md-4">
+            <!-- add Links header and links to CDH and IIIF sanitised with csp and nh3-->
+            <h4 class="footer-header">Links</h4>
+            <ul class="footer-list">
+                {% for key, value in footer_data.items() %}
+                <li class="footer-item">
+                    <a href="{{ value }}" target="_blank">{{ key }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="col-xs-12 col-md-4">
+            <!-- add Further Information header and links to About and Contact with info from config file-->
+            <h4 class="footer-header">Further information</h4>
+            <ul class="footer-list">
+                <li class="footer-item">
+                    <a href="{{ url_for('about')}}">About us</a>
+                </li>
+                <li class="footer-item">
+                    <a href="{{ url_for('contact')}}">How to contact us</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

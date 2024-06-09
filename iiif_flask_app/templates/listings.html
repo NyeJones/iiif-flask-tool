@@ -1,0 +1,178 @@
+<!-- extends main base containing navbar and footer, adds sidebar and file listings -->
+{% extends "main.html" %}
+
+{% block base_content %}
+<div class="results-header container-fluid margin-top-60">
+    <!-- navbar added in here -->
+    {% block header %}
+    {% endblock %}
+    <!-- count of results added in here -->
+    <div class="total-row row">
+        <div class="col">
+            <div class="row">
+                <p class="col-auto">Total: <b>{{ count }}</b> items</p>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- main part of page begins -->
+<div class="content container-fluid">
+    <!-- pagination links for listings page(s) added in here, each page containing 20 results -->
+    <div class="row justify-content-md-center">
+        <div class="pagination justify-content-center">
+        {{ pagination.links }}
+        </div>
+    </div>
+    <div class="row">
+        <!-- Sidebar content begins here with sections for different metadata categories-->
+        <div class="col sidebar">
+            <!-- container for repository data -->
+            <div class="sidebar-section repositories">
+                <!-- title of section and loop through the repository link data -->
+                <h6 class="sidebar-section-header text-center text-white">Repository</h6>
+                <!-- data-section linked to show more button below to expand section -->
+                <ul class="list-group list-group-root" data-section="repositories">
+                    {% for repository_link in repository_links %}
+                    <!-- if there are more than 5 items initially just show the first 5 items -->
+                    <li class="d-flex list-group-item {% if loop.index0 < 5 %}initial-items{% endif %}">
+                        <!-- search link if user wants to narrow search by that repository, creates new search results -->
+                        <!-- link sanitised with nh3 and csp -->
+                        <a class="d-flex justify-content-between align-items-center" href="{{ repository_link.search_link }}">
+                            <!-- name of each repository and number of items connected to it in files -->
+                            <span class="sidebar-list-item col">{{ repository_link.repository }}</span>
+                            <span class= "sidebar-list-count col">{{ repository_link.count }}</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                <!-- button to 'Show More' or 'Show Less' depending on whether expanded, initially unexpanded and 'Show More' visible -->
+                <!-- javascript for this contained in static js file -->
+                <div class=" row more-button-container">
+                    <button class="more-button btn" data-section="repositories">Show More</button>
+                </div>
+            </div>
+            <!-- container for language data -->
+            <div class="sidebar-section languages">
+                <!-- title of section and loop through the language link data -->
+                <h6 class="sidebar-section-header text-center text-white">Language</h6>
+                <!-- data-section linked to show more button below to expand section -->
+                <ul class="list-group list-group-root" data-section="languages">
+                    {% for language_link in language_links %}
+                    <!-- if there are more than 5 items initially just show the first 5 items -->
+                    <li class="d-flex list-group-item {% if loop.index0 < 5 %}initial-items{% endif %}">
+                        <!-- search link if user wants to narrow search by that language, creates new search results -->
+                        <!-- link sanitised with nh3 and csp -->
+                        <a class="d-flex justify-content-between align-items-center" href="{{ language_link.search_link }}">
+                            <!-- name of language and number of items connected to it in files -->
+                            <span class="sidebar-list-item col">{{ language_link.language }}</span>
+                            <span class= "sidebar-list-count col">{{ language_link.count }}</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                <!-- button to 'Show More' or 'Show Less' depending on whether expanded, initially unexpanded and 'Show More' visible -->
+                <!-- javascript for this contained in static js file -->
+                <div class="row more-button-container">
+                    <button class="more-button btn" data-section="languages">Show More</button>
+                </div>  
+            </div>
+            <!-- container for materials data -->
+            <div class="sidebar-section materials">
+                <!-- title of section and loop through the material link data -->
+                <h6 class="sidebar-section-header text-center text-white">Material</h6>
+                <!-- data-section linked to show more button below to expand section -->
+                <ul class="list-group list-group-root" data-section="materials">
+                    {% for material_link in material_links %}
+                    <!-- if there are more than 5 items initially just show the first 5 items -->
+                    <li class="d-flex list-group-item {% if loop.index0 < 5 %}initial-items{% endif %}">
+                        <!-- search link if user wants to narrow search by that material, creates new search results -->
+                        <!-- link sanitised with nh3 and csp -->
+                        <a class="d-flex justify-content-between align-items-center" href="{{ material_link.search_link }}">
+                            <!-- name of material and number of items connected to it in files -->
+                            <span class="sidebar-list-item col">{{ material_link.material }}</span>
+                            <span class= "sidebar-list-count col">{{ material_link.count }}</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                <!-- button to 'Show More' or 'Show Less' depending on whether expanded, initially unexpanded and 'Show More' visible -->         <!-- javascript for this contained in static js file -->
+                <div class="row more-button-container">
+                    <button class="more-button btn" data-section="materials">Show More</button>
+                </div>
+            </div>
+        </div>
+        <!-- Results section -->
+        <div class="col results">
+            <!-- loop through each of the results -->
+            {% for result in results %}
+            <div class="file-list-item border">
+                <div class="col">
+                    <div class="row">
+                        <!-- Each listing begins with iiif link to viewer page which opens link in embedded Mirador viewer-->
+                        <div class="col iiif-link">
+                            <a href="viewer.html?manifest={{ result['iiif_path'] }}", target="_blank", class="file-link">Document viewer</a>
+                            <!-- also contains a toggle button which initiates javascript that expands/unexpands the 'hidden content' below -->
+                            <!-- javascript contained in static js file -->
+                        </div>
+                        <div col more-button>
+                            <button class="toggle-button">&#9654;</button>
+                        </div>
+                        <!-- hidden content section, visibility controlled by toggle button, initially expanded. -->
+                        <div class="hidden-content">
+                            <div class="row">
+                                <div class="col">
+                                    <!-- thumbnail data here, showing thumbnail image and making it also link to the Mirador viewer page for the item -->
+                                    <!-- csp hashes used to allow for Mirador stylings -->
+                                    <!-- thumbnail sanitised using nh3 and csp-->
+                                    <div class="thumbnail-container">
+                                        <a href="viewer.html?manifest={{ result['iiif_path'] }}" target="_blank">
+                                            <img src="{{ result['json_thumbnail'] }}" class="img-fluid" alt="Thumbnail">
+                                        </a>
+                                    </div>
+                                    <!-- check if each item of metadata is not 'N/A and, if so, show the item'-->
+                                    <!-- result for iiif identifier -->
+                                    <!-- include link to manifest as href -->
+                                    {% if result['iiif_path'] != 'N/A' %}
+                                    <span><b>IIIF Manifest</b>:</span>
+                                    <a href="{{ result['iiif_path'] }}" target="_blank">
+                                        <span class="metadata iiif-path">{{ result['iiif_path'] }}</span>
+                                    </a>
+                                    {% endif %}
+                                    <!-- result for iiif label -->
+                                    {% if result['json_label'] != 'N/A' %}
+                                    <span class="metadata iiif-label"><b>Label</b>: {{ result['json_label'] }}</span>
+                                    {% endif %}
+                                    <!-- result for date -->
+                                    {% if result['json_date'] != 'N/A' %}
+                                    <span class="metadata date"><b>Date</b>: {{ result['json_date'] }}</span>
+                                    {% endif %}
+                                    <!-- result for language -->
+                                    {% if result['json_language'] != 'N/A' %}
+                                    <span class="metadata language"><b>Language</b>: {{ result['json_language'] }}</span>
+                                    {% endif %}
+                                    <!-- result for material -->
+                                    {% if result['json_material'] != 'N/A' %}
+                                    <span class="metadata material"><b>Material</b>: {{ result['json_material'] }}</span>
+                                    {% endif %}
+                                     <!-- result for description -->
+                                    {% if result['json_description'] != 'N/A' %}
+                                    <span class="metadata image-description"><b>Description</b>: {{ result['json_description'] }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>    
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <!-- repeat pagination links again at the bottom of the page -->
+    <div class="row justify-content-md-center">
+        <div class="pagination justify-content-center">
+        {{ pagination.links }}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

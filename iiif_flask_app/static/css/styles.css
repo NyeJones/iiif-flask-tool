@@ -1,0 +1,542 @@
+/* Global styles */
+
+/* Apply box-sizing: border-box; to all elements, including pseudo-elements */
+* {
+    box-sizing: border-box; /* Set the box model to include padding and border in the total width and height */
+}
+
+/* Also apply box-sizing to before and after pseudo-elements */
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+/* Body styles */
+body {
+    margin: 0;
+    font-family: "Arno Pro";
+    background-color: #f0f0f0;
+    font-size: 16px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/*Main section styles*/
+main {
+    flex: 1;
+}
+
+/* A element styles */
+a {
+    color: #333;
+    text-decoration: none;
+    transition: color 0.3s
+}
+
+
+a:hover {
+    color: #63051a;
+}
+
+/* Row and column styles */
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0;
+}
+
+.col {
+    width: 100%;
+    flex-basis: 0%;
+    flex-grow: 1;
+    padding-right: 15px;
+    padding-left: 15px;
+}
+
+/* Adds margin to top of page, add space for navbar */
+.margin-top-60 {
+    margin-top: 60px;
+}
+
+/* Adds center justification */
+.justify-content-md-center {
+    justify-content: center;
+}
+
+/* Adds box shadow*/
+.shadow {
+    box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15);
+}
+
+/* Adds a bottom margin for page headers*/
+.header-section.row {
+    margin-bottom: 10px
+}
+
+.row.button-container {
+    justify-content: center;
+}
+
+/* Btn styling */
+.btn:active,
+.btn:focus {
+    box-shadow: none;
+    background-color: rgba(0, 0, 0, 0.9);
+    color: white;
+}
+
+/*Search parameters styles*/
+
+.query-value {
+    font-weight: bold;
+}
+
+.param-col {
+    padding: 0;
+}
+
+/* Search parameter close/remove button */
+.close-button {
+    border: none;
+    padding-left: 10px;
+}
+
+.close-icon {
+    font-size: 20px;
+    color: #8a8a8a;
+}
+
+.close-icon:hover {
+    color: black;
+}
+
+/* Total count styles */
+
+.total-row {
+    margin-top: 20px;
+    margin-bottom: 20px
+}
+
+/* Pagination styles, styles also from Flask Paginate library */
+
+.pagination {
+    margin: 0;
+    padding-bottom: 10px;
+}
+
+.pagination li a,
+.pagination li span {
+    padding: 8px 12px;
+    margin: 0;
+    border: 1px solid #ddd;
+    text-decoration: none;
+    color: #333;
+    background-color: #fff;
+    transition: background-color 0.3s;
+    border-radius: 4px;
+    margin-right: -1px;
+}
+
+/* Hover effect for pagination links within li elements excluding those with class "unavailable" and "current" */
+.pagination li a:hover {
+    color: #63051a;
+    background-color: #f0f0f0;
+}
+
+.pagination li.unavailable a:hover {
+    background-color: #fff;
+}
+
+.pagination li.current a {
+    color: #fff;
+    background-color: rgba(133, 38, 59, 1);
+}
+
+/* Sidebar styles */
+
+.sidebar {
+    margin-top: 6px;
+    width: 25%;
+    min-width: 300px;
+    max-width: 300px;
+}
+
+/* Sidebar section styles */
+.sidebar-section {
+    margin-bottom: 40px;
+}
+
+.sidebar-section-header {
+    font-size: 18px;
+    font-weight: normal;
+    background-color: rgba(133, 38, 59, 0.9);
+    color: white;
+    padding-bottom: 1rem;
+    padding-top: 1rem;
+    margin: 0;
+}
+
+.list-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0;
+}
+
+.list-group-item {
+    transition: background-color 0.3s;
+}
+
+.list-group-item:hover {
+    background-color: #f0f0f0;
+}
+
+
+/* Sidebar item and value styles */
+.list-group-item a {
+    display: block;
+    padding: 20px 15px;
+    position: relative;
+    text-decoration: none;
+}
+
+.list-group-item:first-child {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.sidebar-list-item {
+    position: absolute;
+    right: 5%;
+    top: 50%;
+    transform: translateY(-50%);
+    text-align: left;
+}
+
+.sidebar-list-count {
+    position: absolute;
+    left: 3%;
+    padding: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    text-align: right;
+}
+
+/* Sidebar More button styles */
+.more-button {
+    cursor: pointer;
+    border: none;
+    margin-top: 10px;
+    font-weight: normal;
+    color: #f8f9fa;
+    background-color: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding-bottom: 1rem;
+    padding-top: 1rem;
+    width: 50%;
+}
+
+.row.more-button-container {
+    justify-content: center;
+}
+
+.more-button:hover {
+    color: #f8f9fa;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.list-group-item.initial-items {
+    display: block;
+}
+
+.list-group-item:not(.initial-items) {
+    display: none;
+}
+
+.show-all-items .list-group-item {
+    display: block;
+}
+
+/* Results items styles */
+
+.file-list-item {
+    margin-bottom: 30px;
+}
+
+.col.results {
+    padding-left: 0;
+}
+
+.iiif-link {
+    padding-bottom: 10px;
+}
+
+.file-link {
+    color: #333;
+    font-weight: bold;
+    text-decoration: none;
+    font-size: 18px;
+    word-wrap: normal;
+}
+
+/* Results Toggle button styles */
+.toggle-button {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #63051a;
+    transition: transform 0.2s;
+}
+
+.toggle-button.active {
+    transform: rotate(90deg);
+}
+
+.hidden-content {
+    display: none;
+}
+
+/* Results Metadata styles */
+.thumbnail-container {
+    float: left;
+    padding-right: 20px;
+    padding-bottom: 0;
+    padding-top: 0;
+    padding-left: 0;
+}
+
+.metadata {
+    padding-right: 5px;
+}
+
+.iiif-path {
+    word-break: break-all;
+}
+
+/* Homepage styles */
+
+.home-page .row {
+    position: relative;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.top-panel {
+    background-color: transparent;
+    position: relative;
+    display: flex;
+}
+
+.background-image {
+    background-size: cover;
+    position: absolute;
+    width: 110%;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    height: calc(100% + 27.5rem);
+    top: -20rem;
+    z-index: -1;
+    opacity: 0.7;
+}
+
+.info-box {
+    margin: 40px;
+    padding: 15px;
+    border-radius: 8px;
+    flex: 1 1 auto;
+    max-width: 45%;
+    background-color: rgba(255, 255, 255, 0.9);
+    z-index: 999
+}
+
+.info-box h2 {
+    margin: 0;
+}
+
+.intro-box {
+    max-width: 80%;
+    margin: 40px;
+    z-index: 999;
+    background-color: #f0f0f0;
+    margin-top: 0;
+    padding-bottom: 0;
+    border-radius: 8px;
+    flex-wrap: wrap;
+}
+
+.intro-fig {
+    float: right;
+    margin-top: 10px;
+    margin-right: 10px;
+    margin-left: 20px;
+    margin-bottom: 10px;
+    width: 50%;
+}
+
+.intro-image {
+    width: 100%;
+    height: auto;
+    opacity: 0.8;
+}
+.intro-capt {
+    font-style: italic;
+    font-size: 0.9em;
+    margin-top: 0.5rem;
+    text-align: right;
+    line-height: 1.5;
+}
+.intro-text {
+    margin-top: 20px;
+}
+
+/* navbar styles */
+
+.navbar {
+    position: fixed;
+    margin-left: 0;
+    margin-right: 0;
+    top: 0;
+    height: 60px;
+    width: 100%;
+    background-color: rgba(133, 38, 59, 0.9);
+    display: flex;
+    align-items: center;
+    padding: 0;
+    z-index: 9999;
+}
+
+.navbar.navbar-expand .navbar-nav * {
+    line-height: 1.25rem;
+    margin-bottom: 0;
+}
+
+.navbar .container-fluid {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+/* Adjust the styling for the left and right ul */
+.navbar .container-fluid ul {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Align the left ul to the left */
+.navbar .container-fluid ul:first-child {
+    margin-right: auto;
+}
+
+/* Align the right ul to the right */
+.navbar .container-fluid ul:last-child {
+    margin-left: auto;
+}
+
+.navbar a {
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.navbar a:hover {
+    color: #63051a;
+}
+
+/* Style the search input field */
+.navbar .search-input {
+    width: 60%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    margin-right: 3px;
+}
+
+.navbar .btn {
+    padding-left: 5px;
+    padding-right: 5px;
+    transition: background-color 0.3s;
+}
+
+.navbar .btn:hover {
+    background-color: #dfdfdf;
+}
+
+/* Footer styles */
+
+footer {
+    color: #f8f9fa;
+    background: #090909;
+    margin-top: 40px;
+}
+
+footer .container-fluid {
+    padding: 15px;
+}
+
+.footer-header {
+    font-size: 16px;
+    font-weight: bold;
+    color: rgba(220, 38, 59, 0.7)
+}
+
+.footer-list {
+    padding: 0;
+    list-style: none;
+    font-size: 14px;
+}
+
+.footer-cols {
+    justify-content: center;
+}
+
+.footer-list a {
+    color: rgba(255, 255, 255, 0.7);
+    text-align: center;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.footer-item {
+    transition: color 0.3s;
+    padding-bottom: 2px;
+}
+
+.footer-item a:hover {
+    color: #f0f0f0;
+}
+
+/* Media query for smaller screens */
+/* For smaller screens make sections 100% width so they form rows in a single column */
+@media only screen and (max-width: 620px) {
+    .info-box {
+        max-width: 100%;
+    }
+    .intro-box {
+        max-width: 100%;
+    }
+    .intro-fig {
+        width: 100%;
+        margin-left: 10px;
+        margin-right: 0px
+    }
+    
+    .intro-text {
+        margin-top: 10px;
+    }
+    
+    .intro-capt {
+        text-align: left;
+    }
+    .sidebar {
+        max-width: 100%;
+        min-width: 100%;
+    }
+}
+

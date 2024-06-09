@@ -1,0 +1,36 @@
+{% extends "main.html" %}
+
+{% block base_content %}
+<!-- home page content created mainly from config file data -->
+<div class="home-page container-fluid margin-top-60">
+	<div class="row top-panel">
+		<!-- add in background image from config data url, pre-sanitised with nh3 and csp-->
+		<img class="background-image" src="{{ background_image }}">
+		<div class="info-box col">
+			<!-- loop through main title and short intro data imported from config file, add to page -->
+			{% for item in main_title %}
+			<h2>{{ item }}</h2>
+			{% endfor %}
+			{% for para in short_intro %}
+			<p>{{ para }}</p>
+			{% endfor %}
+		</div>
+	</div>
+	<div class="intro-box container shadow">
+		<div class="image-container">
+			<figure class="intro-fig">
+				<img class="intro-image" src="{{ intro_image }}">
+				{% for item in caption_text %}
+				<figcaption class="intro-capt"> {{ item }}</figcaption>
+				{% endfor %}
+			</figure>
+			<div class="intro-text">
+				{% for para in long_intro %}
+				<p>{{ para }}</p>
+				{% endfor %}
+			</div>
+		</div>	
+	</div>
+</div>
+{% endblock %}
+

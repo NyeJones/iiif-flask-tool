@@ -1,0 +1,16 @@
+{% extends "main.html" %}
+
+{% block base_content %}
+<!-- About page content -->
+<div class="about-page container-fluid margin-top-60">
+	<div class="row">
+		<div class="col">
+			<h2>About the Project</h2>
+			<!-- loop through each paragraph imported from config file, add to page -->
+			{% for para in about_data %}
+			<p>{{ para }}</p>
+			{% endfor %}
+		</div>
+	</div>
+</div>
+{% endblock %}

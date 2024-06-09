@@ -1,0 +1,14 @@
+<!-- extends main base containing navbar and footer, adds query invalid message -->
+{% extends "main.html" %}
+
+{% block base_content %}
+<!-- Invalid query page content -->
+<div class="invalid-page container-fluid margin-top-60">
+	<div class="row">
+		<div class="col">
+			<h2>Invalid Query</h2>
+			<p><b>{{ invalid_msg }}</b></p>
+		</div>
+	</div>
+</div>
+{% endblock %}

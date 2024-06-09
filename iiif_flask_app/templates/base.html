@@ -1,0 +1,41 @@
+<!-- base.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+     <!-- Meta tags for character set and viewport settings -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Bootstrap CSS from CDN covered by csp-->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    
+     <!-- Custom CSS from the static folder -->
+    <link rel='stylesheet' href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <!-- Header section -->
+    <header>
+        {% block head %}{% endblock %}
+    </header>
+
+    <!-- Main content section -->
+    <main>
+        {% block base_content %}{% endblock %}
+    </main>
+
+    <!-- Footer section -->
+    <footer>
+        {% block footer_content %}{% endblock %}
+    </footer>
+
+    <!-- jQuery from CDN covered by csp-->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+    <!-- Bootstrap JavaScript from CDN covered by csp-->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+
+    <!-- Custom JavaScript from the static folder -->
+    <script src="{{ url_for('static', filename='javascript/script.js') }}"></script>
+</body>
+</html>

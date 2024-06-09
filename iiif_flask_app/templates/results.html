@@ -1,0 +1,37 @@
+<!-- extends listings page, mostly the same for index and results pages -->
+{% extends "listings.html" %}
+
+{% block header %}
+<!-- Results Header -->
+<div class="header-section row">
+	<div class="col">
+		<h2 class="results-header">Results</h2>
+	</div>
+</div>
+
+<!-- user query parameters, show keyword, repository, language, material queries here-->
+<div class="params-row row">
+	<div class="col">
+	<!-- loop through query string values -->
+	{% for key, value in query_params.items() %}
+		<!-- each query given id, used for removing item in javascript-->
+		<div id="{{ key }}_param_item" class="row">
+			<div class="param-col col">
+			<!-- if value is '*' it means no query has occurred so do not include in visible queries -->
+			{%if value != '*' %}
+				<!-- show query key e.g. 'repository' and value e.g. 'Cambridge University Library' -->
+				<!-- Capitalise the key and then escape to make secure -->
+				<span class="query-key">{{ key | capitalize | escape }}:</span>
+				<span class="query-value" id="{{ key }}_param_value">{{ value }}</span>
+				<!-- close button triggers javascript to remove item and redirect to results again without that query -->
+				<!-- javascript for this contained in static js file -->
+				<button class="close-button" aria-label="close alert" data-key="{{ key }}">
+                	<span class=close-icon aria-hidden="true">&times;</span>
+            	</button>
+			{% endif %}
+			</div>
+		</div>
+	{% endfor %}
+	</div>
+</div>
+{% endblock %}

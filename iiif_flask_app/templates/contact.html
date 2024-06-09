@@ -1,0 +1,25 @@
+{% extends "main.html" %}
+
+{% block base_content %}
+<!-- Contact page content -->
+<div class="contact-page container-fluid margin-top-60">
+	<div class="row">
+		<div class="col">
+			<h2>Project Team</h2>
+			<!-- Loop through data imported from config file, add to page -->
+			{% for item in proj_team_data %}
+			<ul class="contact-list">
+				<li>{{ item }}</li>
+			</ul>
+			{% endfor %}
+			<h2>Board of Advisors</h2>
+			<!-- Loop through data imported from config file, add to page -->
+			{% for item in ad_board_data %}
+			<ul class="contact-list">
+				<li>{{ item }}</li>
+			</ul>
+			{% endfor %}
+		</div>
+	</div>
+</div>
+{% endblock %}

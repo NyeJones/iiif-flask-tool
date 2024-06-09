@@ -1,0 +1,2 @@
+https://cudl.lib.cam.ac.uk/iiif/collection/kettlesyard
+https://www.e-codices.unifr.ch/metadata/iiif/bc-s-0091/manifest.json

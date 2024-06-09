@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block base_content %}
+<!-- Container element for the Mirador viewer -->
+<div id="my-mirador"/>
+
+<!-- Script tag to load Mirador from an external source as an ES6 module -->
+<script src="https://unpkg.com/mirador@latest/dist/mirador.min.js"></script>
+
+<!-- Include the Mirador setup using javascript in static js file-->
+<script src="{{ url_for('static', filename='javascript/mirador_setup.js') }}"></script>
+{% endblock %}
