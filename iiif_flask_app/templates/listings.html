@@ -130,14 +130,6 @@
                                         </a>
                                     </div>
                                     <!-- check if each item of metadata is not 'N/A and, if so, show the item'-->
-                                    <!-- result for iiif identifier -->
-                                    <!-- include link to manifest as href -->
-                                    {% if result['iiif_path'] != 'N/A' %}
-                                    <span><b>IIIF Manifest</b>:</span>
-                                    <a href="{{ result['iiif_path'] }}" target="_blank">
-                                        <span class="metadata iiif-path">{{ result['iiif_path'] }}</span>
-                                    </a>
-                                    {% endif %}
                                     <!-- result for iiif label -->
                                     {% if result['json_label'] != 'N/A' %}
                                     <span class="metadata iiif-label"><b>Label</b>: {{ result['json_label'] }}</span>
@@ -157,6 +149,14 @@
                                      <!-- result for description -->
                                     {% if result['json_description'] != 'N/A' %}
                                     <span class="metadata image-description"><b>Description</b>: {{ result['json_description'] }}</span>
+                                    {% endif %}
+                                    <!-- result for iiif identifier -->
+                                    <!-- include link to manifest as href -->
+                                    {% if result['iiif_path'] != 'N/A' %}
+                                    <span><b>IIIF Manifest</b>:</span>
+                                    <a href="{{ result['iiif_path'] }}" target="_blank">
+                                        <span class="metadata iiif-path">{{ result['iiif_path'] }}</span>
+                                    </a>
                                     {% endif %}
                                 </div>
                             </div>
