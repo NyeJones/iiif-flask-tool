@@ -360,14 +360,9 @@ app.config.from_object(Config)
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 #get config data for site from file
-#iiif image api
+#iiif image uris
 background_image = app.config['BACKGROUND_IMAGE']
-#sanitisation of html link for image
-background_image = extract_html_text(background_image)
-#iiif image api
 intro_image = app.config['INTRO_IMAGE']
-#sanitisation of html link for image
-intro_image = extract_html_text(intro_image)
 
 #various text items to fill parts of the site
 main_title = app.config['MAIN_TITLE']
@@ -384,11 +379,6 @@ repositories = app.config['REPOSITORIES']
 #list of base urls for validation in Mirador viewer and thumbnails
 #more base urls can be added to the list in the config file, following pattern there
 base_urls = app.config ['BASE_URLS']
-
-#sanitise url for links in footer data
-for key, value in footer_data.items():
-    clean_value = extract_html_text(value)
-    footer_data[key] = clean_value
 
 #Content Security Policy (CSP) directives - rules that define the allowed sources for various types of content
 #style needs to be 'unsafe-inline' for mirador generated inline style elements to work
