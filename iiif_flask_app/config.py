@@ -2,7 +2,7 @@ import os
 
 class Config:
     #access secret key for app security
-    SECRET_KEY = os.environ.get('FLASK_TEST_SECRET_KEY')
+    SECRET_KEY = os.environ.get('IIIF_FLASK_KEY')
     #home page background image
     #use image api from sequences in manifest, followed by "/467,857,2418,1397/full/0/default.jpg" for correct sizing
     BACKGROUND_IMAGE = "https://gallica.bnf.fr/iiif/ark:/12148/btv1b8415234c/f14/467,857,2418,1397/full/0/default.jpg"
