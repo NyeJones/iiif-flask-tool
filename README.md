@@ -1,6 +1,6 @@
 # iiif-flask-app
 
-This tool aims to solve a general problem in the Digital Humanities by creating a prototype of a repurposable platform that could be used as a simple tool to aggregate and search across any kind of digitised content available over IIIF (the International Image Interoperability Framework), by scholars working on any kind of material, without the need for a high level of technical expertise, financial resources or institutional infrastructure.
+This tool aims to solve a general problem in the Digital Humanities by creating a prototype of a repurposable platform that could be used as a simple tool to aggregate and search across any kind of digitised content available over IIIF (the [International Image Interoperability Framework](https://iiif.io/)), by scholars working on any kind of material, without the need for a high level of technical expertise, financial resources or institutional infrastructure.
 
 ## Installation
 
