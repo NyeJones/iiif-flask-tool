@@ -42,33 +42,40 @@ This tool aims to solve a general problem in the Digital Humanities by creating 
 ```
 echo $SHELL
 ```
+
 3. Check if profile file exists, run one of following commands for Bash or Zsh shells respectively:
 ```
 ls ~/.bashrc
 ls ~/.zshrc
 ```
+
 4. Create profile file in home directory if not there, run one of following commands for Bash or Zsh shells respectively:
 ```
 touch ~/.bashrc
 touch ~/.zshrc
 ```
+
 5. Generate secret key token by using following commands and copy the resulting token:
 ```
+
 python
 import secrets
 secrets.token_hex(16)
 exit()
 ```
+
 6. Open profile file by running one of following commands for Bash or Zsh shells respectively:
 ```
 nano ~/.bashrc
 nano ~/.zshrc
 ```
+
 7. Add secret key to profile file by adding the following line to the file:
 ```
 export IIIF_FLASK_KEY="your generated key copied here"
 ```
 Then save and close the editor (Ctrl+X, then Y, then Enter for Nano editor).
+
 8. Apply changes by running one of following commands for Bash or Zsh shells respectively:
 ``` 
 source ~/.bashrc
