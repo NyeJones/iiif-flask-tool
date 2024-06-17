@@ -5,20 +5,41 @@ This tool aims to solve a general problem in the Digital Humanities by creating 
 ## Installation
 
 1. Clone or download the repository on your computer.
-2. Create virtual environment in repository directory - "python -m venv venv".
-3. Activate virtual environment from within repository directory - "source venv/bin/activate".
-4. Install Python dependencies from requirements file - "pip install -r requirements.txt".
-5. Create secret key for app security, see Secret Key section below.
+2. Open terminal and navigate to the repository directory. 
+3. Create virtual environment in repository directory:
+```
+python -m venv venv
+```
+
+4. Activate virtual environment from within repository directory:
+``` 
+source venv/bin/activate
+```
+
+5. Install Python dependencies from requirements file:
+```
+pip install -r requirements.txt
+```
+
+6. Create secret key for app security, see Secret Key section below.
 
 ## Using the Tool
 
 ### IIIF Manifest Extraction
 
-1. Open terminal and navigate to root directory of tools.
+1. Open terminal and navigate to the repository directory. 
 2. Activate virtual environment as in installation instructions.
-3. Navigate to "iiif_extraction/input/input.txt".
+3. Navigate to the following file:
+```
+iiif_extraction/input/input.txt
+```
+
 4. Insert a list of IIIF manifest URIs or IIIF collection URIs on individual lines within the file (there are examples of how they should appear within the file, delete these and add your own).
-5. Navigate back to the "iiif_extraction" directory and run the following command - "python iiif_extractor.py".
+5. Navigate back to the "iiif_extraction" directory and run the following command to run the manifest extraction code:
+```
+python iiif_extractor.py
+```
+
 6. This will extract the IIIF manifests for the URIs entered in the "input.txt" file. The manifests will be saved in the "outputs" directory.
 7. The process of extraction may take a while, monitor the terminal for progress.
 8. Successful manifest extraction and any errors in extraction process reported in the terminal.
