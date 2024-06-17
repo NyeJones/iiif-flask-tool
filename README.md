@@ -57,7 +57,6 @@ touch ~/.zshrc
 
 5. Generate secret key token by using following commands and copy the resulting token:
 ```
-
 python
 import secrets
 secrets.token_hex(16)
