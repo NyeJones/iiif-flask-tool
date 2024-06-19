@@ -129,20 +129,10 @@ source ~/.bashrc
 source ~/.zshrc
 ```
 
-### Set up a secret key on Windows (PowerShell)
+### Set up a secret key on Windows
 
-1. Open Powershell terminal.
-2. Check for profile file by running the following command:
-```
-Test-Path $PROFILE
-```
-
-3. Create profile file if not there by running the following command:
-```
-if (-not (Test-Path $PROFILE)) {New-Item -Type File -Force $PROFILE}
-```
-
-4. Generate secret key token by using following commands and copy the resulting token:
+1. Open __Powershell__ terminal.
+2. Generate __secret key token__ by using following commands and __copy the resulting token__:
 ```
 python
 import secrets
@@ -150,19 +140,14 @@ secrets.token_hex(16)
 exit()
 ```
 
-5. Open profile file by running the following command:
-```
-notepad $PROFILE
-```
+3. Exit the Powershell terminal and use the following instructions on desktop.
+4. Open the __Control Panel__.
+5. Go to __System and Security__.
+6. Click on __System__.
+7. Select __Advanced system settings__ on the left side.
+8. In the __System Properties__ window, click on the __Environment Variables__ button.
+9. In the __User variables__ section, click on the __New..__ button.
+10. In the New User Variable window, enter __IIIF_FLASK_KEY__ in the __Variable name__ field and your copied __secret key token__ in the __Variable value__ field and click on the __OK__ button.
+11. Finally, click on the __OK__ button in the __Environment Variables__ window.
 
-6. Add secret key to profile file by adding the following line to the file:
-```
-$Env:IIIF_FLASK_KEY="your generated key copied here"
-```
 
-Then save and close the editor
-
-7. Apply changes by running the following command in the Powershell terminal:
-```
-. $PROFILE
-```
