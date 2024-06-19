@@ -140,7 +140,7 @@ secrets.token_hex(16)
 exit()
 ```
 
-3. Exit the Powershell terminal and use the following instructions on desktop.
+3. Exit the __Powershell__ terminal and use the following instructions on __desktop__.
 4. Open the __Control Panel__.
 5. Go to __System and Security__.
 6. Click on __System__.
