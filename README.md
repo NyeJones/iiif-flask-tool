@@ -80,13 +80,13 @@ Having created a __secret key__, we are now in a position to install the tool. I
 ## Installation on macOS or Unix-like systems
 
 1. __Clone__ or __download__ the repository on your computer.
-2. Open __terminal__ and navigate to the __repository directory__. 
-3. Create __virtual environment__ in __repository directory__:
+2. Open __terminal__ and navigate to the __repository__ directory. 
+3. Create __virtual environment__ in __repository__ directory:
 ```
 python -m venv venv
 ```
 
-4. Activate __virtual environment__ from within __repository directory__:
+4. Activate __virtual environment__ from within __repository__ directory:
 ``` 
 source venv/bin/activate
 ```
@@ -99,13 +99,13 @@ pip install -r requirements.txt
 ## Installation on Windows (PowerShell)
 
 1. __Clone__ or __download__ the repository on your computer.
-2. Open __Powershell__ terminal and navigate to the __repository directory__.
-3. Create __virtual environment__ in __repository directory__:
+2. Open __Powershell__ terminal and navigate to the __repository__directory.
+3. Create __virtual environment__ in __repository__ directory:
 ```
 python -m venv venv
 ```
 
-4. Activate __virtual environment__ from within __repository directory__:
+4. Activate __virtual environment__ from within __repository__ directory:
 ``` 
 .\myenv\Scripts\Activate
 ```
@@ -119,7 +119,7 @@ pip install -r requirements.txt
 
 ### IIIF Manifest Extraction
 
-1. Open __terminal__ for MacOs/Unix-like or __Powershell__ for Windows and navigate to the __repository directory__. 
+1. Open __terminal__ for MacOs/Unix-like or __Powershell__ for Windows and navigate to the __repository__ directory. 
 2. Activate __virtual environment__ as per installation instructions.
 3. Navigate to the __input.txt__ file:
 ```
@@ -127,7 +127,7 @@ iiif_extraction/input/input.txt
 ```
 
 4. Insert a list of __IIIF manifest URIs__ or __IIIF collection URIs__ on individual lines within the file (examples of how they should appear can be found in the file, __delete these and add your own__).
-5. Navigate back to the __iiif_extraction directory__ and run the following command to run the __manifest extraction__ code:
+5. Navigate back to the __iiif_extraction__ directory and run the following command to run the __manifest extraction__ code:
 ```
 python iiif_extractor.py
 ```
@@ -138,7 +138,7 @@ python iiif_extractor.py
 
 ### IIIF Flask Application
 
-1. Open __terminal__ and navigate to __root directory__ of repository.
+1. Open __terminal__ and navigate to the __repository__ directory.
 2. Activate __virtual environment__ as per installation instructions.
 3. Copy the files generated in __iiif_extraction/outputs__ by the __iiif_extraction__ script and move them to the __iiif_flask_app/files__ directory. These manifest files will be used to create the __index__ for your application.
 4. Navigate to __iiif_flask_app/config.py__ and open it in an editor. This file forms the basis of the __editable text and image__ sections of the application, together with some aspects of __security__.
