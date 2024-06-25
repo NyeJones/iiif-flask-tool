@@ -142,7 +142,7 @@ python iiif_extractor.py
 2. Activate __virtual environment__ as per installation instructions.
 3. Copy the files generated in __iiif_extraction/outputs__ by the __iiif_extraction__ script and move them to the __iiif_flask_app/files__ directory. These manifest files will be used to create the __index__ for your application.
 4. Navigate to __iiif_flask_app/config.py__ and open it in an editor. This file forms the basis of the __editable text and image__ sections of the application, together with some aspects of __security__.
-5. Edit the sections of __config.py__ to fit the requirements of your application. Do not edit the __SECRET_KEY__ variable as this will be generated separately, see __Secret Key__ sections below. Instructions for each section of the __config.py__ file are commented throughout, __read the comments carefully and change the sections accordingly__.
+5. Edit the sections of __config.py__ to fit the requirements of your application. Do not edit the __SECRET_KEY__ variable as this will be generated separately, see __Secret Key__ sections above. Instructions for each section of the __config.py__ file are commented throughout, __read the comments carefully and change the sections accordingly__.
 6. Navigate to the __iiif_flask_app__ directory and run the following command:
 ```
 python app.py
