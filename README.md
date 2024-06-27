@@ -13,7 +13,7 @@ We begin by setting up a __secret key__ that will be used to enhance site securi
 ### Set up a secret key on macOS or Unix-like systems
 
 1. Open __terminal__.
-2. Identify shell type, __Bash__ or __Zsh__:
+2. Identify shell type, __Bash__ or __Zsh__ by running the following command:
 ```
 echo $SHELL
 ```
@@ -37,7 +37,7 @@ import secrets
 secrets.token_hex(16)
 ```
 
-Copy the resulting token, then exit Python:
+Copy the resulting token, then exit Python with the following command:
 
 ```
 exit()
@@ -71,7 +71,7 @@ import secrets
 secrets.token_hex(16)
 ```
 
-Copy the resulting token, then exit Python:
+Copy the resulting token, then exit Python with the following command:
 
 ```
 exit()
@@ -93,7 +93,7 @@ Having created a __secret key__, we are now in a position to install the tool. I
 
 ## Installation on macOS or Unix-like systems
 
-1. __Clone__ or __download__ the repository on your computer.
+1. __Clone__ or __download__ the __repository__ on your computer.
 2. Open __terminal__ and navigate to the __repository__ directory. 
 3. Create __virtual environment__ in __repository__ directory:
 ```
@@ -113,7 +113,7 @@ pip install -r requirements.txt
 ## Installation on Windows (PowerShell)
 
 1. __Clone__ or __download__ the repository on your computer.
-2. Open __Powershell__ terminal and navigate to the __repository__directory.
+2. Open __Powershell__ terminal and navigate to the __repository__ directory.
 3. Create __virtual environment__ in __repository__ directory:
 ```
 python -m venv venv
@@ -142,7 +142,7 @@ The __Flask backend__ ensures robust __security__ through comprehensive measures
 iiif_extraction/input/input.txt
 ```
 
-2. Insert a list of __IIIF manifest URIs__ or __IIIF collection URIs__ on individual lines within the file (examples of how they should appear can be found in the file, __delete these and add your own__).
+2. Insert a list of __IIIF manifest URIs__ or __IIIF collection URIs__ on individual lines within the file. Examples of how they should appear can be found in the file, __delete these and add your own__.
 3. Open __terminal__ for MacOs/Unix-like or __Powershell__ for Windows and navigate to the __repository__ directory.
 4. Activate __virtual environment__ as per installation instructions.
 5. Navigate back to the __iiif_extraction__ directory and run the following command to run the __manifest extraction__ code:
@@ -166,7 +166,7 @@ python iiif_extractor.py
 python app.py
 ```
 
-7. Open __browser__ and navigate to the __following url__ to run the application locally on your machine:
+7. Open __browser__ and navigate to the __following url__ to run the application locally on your computer:
 ```
 http://127.0.0.1:5000
 ```
