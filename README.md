@@ -129,7 +129,7 @@ pip install -r requirements.txt
 
 The tool is divided into __two main parts__. The first part extracts __IIIF manifests__ using an __input file__ containing a list of __IIIF URIs__. The second part uses these __IIIF manifests__ to create an __editable website__ using __Python__ and __Flask__, which is run locally on your computer. This website is then ready to be moved from the local host to the server provider of your choice.
 
-The __Flask backend__ ensures robust __security__ through comprehensive measures such as protection against __Cross-Site Scripting (XSS)__ and __Cross-Site Request Forgery (CSRF)__, and the implementation of security headers like __Content Security Policy (CSP)__, __HTTP Strict Transport Security (HSTS)__, and __X-Content-Type-Options__.
+The __Flask backend__ ensures robust __security__ through comprehensive measures such as protection against __Cross-Site Scripting (XSS)__ and __Cross-Site Request Forgery (CSRF)__, and the implementation of __security headers__ like __Content Security Policy (CSP)__, __HTTP Strict Transport Security (HSTS)__, and __X-Content-Type-Options__.
 
 ### IIIF Manifest Extraction
 
