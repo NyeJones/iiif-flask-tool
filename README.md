@@ -2,7 +2,9 @@
 
 This tool aims to solve a general problem in the __Digital Humanities__ by creating a prototype of a repurposable platform that can be used as a simple tool to aggregate and search across any kind of digitised content available over __IIIF__ (the [International Image Interoperability Framework](https://iiif.io/)), by scholars working on any kind of material, without the need for a high level of technical expertise, financial resources or institutional infrastructure.
 
-Instructions are for both __MacOs/Unix-like__ and __Windows__ systems. __Please note that processes sometimes need to be finished by pressing enter in the Windows Powershell__.
+Instructions are for both __MacOs/Unix-like__ and __Windows__ systems. 
+
+__Please note that Windows Powershell processes sometimes need to be finished by pressing enter__.
 
 ## Secret Key
 
@@ -33,6 +35,7 @@ touch ~/.zshrc
 python
 import secrets
 secrets.token_hex(16)
+```
 
 Copy the resulting token, then exit Python:
 
@@ -66,6 +69,7 @@ source ~/.zshrc
 python
 import secrets
 secrets.token_hex(16)
+```
 
 Copy the resulting token, then exit Python:
 
