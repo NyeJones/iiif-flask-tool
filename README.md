@@ -2,6 +2,8 @@
 
 This tool aims to solve a general problem in the __Digital Humanities__ by creating a prototype of a repurposable platform that can be used as a simple tool to aggregate and search across any kind of digitised content available over __IIIF__ (the [International Image Interoperability Framework](https://iiif.io/)), by scholars working on any kind of material, without the need for a high level of technical expertise, financial resources or institutional infrastructure.
 
+Instructions are for both __MacOs/Unix-like__ and __Windows__ systems. __Please note that processes sometimes need to be finished by pressing enter in the Windows Powershell__.
+
 ## Secret Key
 
 We begin by setting up a __secret key__ that will be used to enhance site security. Instructions for __MacOs/Unix-like__ and __Windows__ systems are below, please follow the appropriate instructions. When you have finished, move on to the __Installation__ section. 
@@ -26,11 +28,15 @@ touch ~/.bashrc
 touch ~/.zshrc
 ```
 
-5. Generate __secret key__ token by using following commands and __copy__ the resulting token:
+5. Generate __secret key__ token by using following commands:
 ```
 python
 import secrets
 secrets.token_hex(16)
+
+Copy the resulting token, then exit Python:
+
+```
 exit()
 ```
 
@@ -40,7 +46,7 @@ nano ~/.bashrc
 nano ~/.zshrc
 ```
 
-7. Add __secret key__ to __profile__ file by adding the following line to the file:
+7. Add __secret key__ to __profile__ file by adding the following line to the file, pasting the token generated earlier between the quotation marks:
 ```
 export IIIF_FLASK_KEY="your generated key copied here"
 ```
@@ -55,11 +61,15 @@ source ~/.zshrc
 ### Set up a secret key on Windows
 
 1. Open __Powershell__ terminal.
-2. Generate __secret key token__ by using following commands and __copy the resulting token__:
+2. Generate __secret key__ token by using following commands:
 ```
 python
 import secrets
 secrets.token_hex(16)
+
+Copy the resulting token, then exit Python:
+
+```
 exit()
 ```
 
@@ -70,7 +80,7 @@ exit()
 7. Select __Advanced system settings__ on the left side.
 8. In the __System Properties__ window, click on the __Environment Variables__ button.
 9. In the __User variables__ section, click on the __New..__ button.
-10. In the __New User Variable__ window, enter __IIIF_FLASK_KEY__ in the __Variable name__ field and your copied __secret key token__ in the __Variable value__ field and click on the __OK__ button.
+10. In the __New User Variable__ window, enter __IIIF_FLASK_KEY__ in the __Variable name__ field and your copied __secret key token__ in the __Variable value__ field, keeping the quotation marks, and click on the __OK__ button.
 11. Finally, click on the __OK__ button in the __Environment Variables__ window.
 
 # Installation
@@ -107,7 +117,7 @@ python -m venv venv
 
 4. Activate __virtual environment__ from within __repository__ directory:
 ``` 
-.\myenv\Scripts\Activate
+.\venv\Scripts\activate
 ```
 
 5. Install __Python dependencies__ from __requirements__ file:
@@ -117,16 +127,20 @@ pip install -r requirements.txt
 
 ## Using the Tool
 
+The tool is divided into __two main parts__. The first part extracts __IIIF manifests__ using an __input file__ containing a list of __IIIF URIs__. The second part uses these __IIIF manifests__ to create an __editable website__ using __Python__ and __Flask__, which is run locally on your computer. This website is then ready to be moved from the local host to the server provider of your choice.
+
+The __Flask backend__ ensures robust __security__ through comprehensive measures such as protection against __Cross-Site Scripting (XSS)__ and __Cross-Site Request Forgery (CSRF)__, and the implementation of security headers like __Content Security Policy (CSP)__, __HTTP Strict Transport Security (HSTS)__, and __X-Content-Type-Options__.
+
 ### IIIF Manifest Extraction
 
-1. Open __terminal__ for MacOs/Unix-like or __Powershell__ for Windows and navigate to the __repository__ directory. 
-2. Activate __virtual environment__ as per installation instructions.
-3. Navigate to the __input.txt__ file:
+1. Navigate to the __input.txt__ file:
 ```
 iiif_extraction/input/input.txt
 ```
 
-4. Insert a list of __IIIF manifest URIs__ or __IIIF collection URIs__ on individual lines within the file (examples of how they should appear can be found in the file, __delete these and add your own__).
+2. Insert a list of __IIIF manifest URIs__ or __IIIF collection URIs__ on individual lines within the file (examples of how they should appear can be found in the file, __delete these and add your own__).
+3. Open __terminal__ for MacOs/Unix-like or __Powershell__ for Windows and navigate to the __repository__ directory.
+4. Activate __virtual environment__ as per installation instructions.
 5. Navigate back to the __iiif_extraction__ directory and run the following command to run the __manifest extraction__ code:
 ```
 python iiif_extractor.py
@@ -138,11 +152,11 @@ python iiif_extractor.py
 
 ### IIIF Flask Application
 
-1. Open __terminal__ and navigate to the __repository__ directory.
-2. Activate __virtual environment__ as per installation instructions.
-3. Copy the files generated in __iiif_extraction/outputs__ by the __iiif_extraction__ script and move them to the __iiif_flask_app/files__ directory. These manifest files will be used to create the __index__ for your application.
-4. Navigate to __iiif_flask_app/config.py__ and open it in an editor. This file forms the basis of the __editable text and image__ sections of the application, together with some aspects of __security__.
-5. Edit the sections of __config.py__ to fit the requirements of your application. Do not edit the __SECRET_KEY__ variable as this will be generated separately, see __Secret Key__ sections above. Instructions for each section of the __config.py__ file are commented throughout, __read the comments carefully and change the sections accordingly__.
+1. Copy the files generated in __iiif_extraction/outputs__ by the __iiif_extraction__ script and move them to the __iiif_flask_app/files__ directory. These manifest files will be used to create the __index__ for your application.
+2. Navigate to __iiif_flask_app/config.py__ and open it in an editor. This file forms the basis of the __editable text and image__ sections of the application, together with some aspects of __security__.
+3. Edit the sections of __config.py__ to fit the requirements of your application. Do not edit the __SECRET_KEY__ variable as this will be generated separately, see __Secret Key__ sections above. Instructions for each section of the __config.py__ file are commented throughout, __read the comments carefully and change the sections accordingly__.
+4. Open __terminal__ and navigate to the __repository__ directory.
+5. Activate __virtual environment__ as per installation instructions.
 6. Navigate to the __iiif_flask_app__ directory and run the following command:
 ```
 python app.py
