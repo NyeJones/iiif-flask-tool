@@ -681,7 +681,9 @@ def results():
 
         #create combined query from filters and user query then search Whoosh index
         search_query = And([search_query] + filters)
-        results = searcher.search(search_query, limit=None, sortedby='iiif_path')
+        #extract the results and sort them by iiif path using natsorted for numerical sorting
+        results = searcher.search(search_query, limit=None)
+        results = natsorted(results, key=lambda x: x['iiif_path'])
         #convert results to list of dictionaries
         results = [dict(result) for result in results]
 
@@ -742,19 +744,21 @@ def list_files():
         per_page = 20
         offset = (page - 1) * per_page
         
-        
         #cache key for the complete results set
         cache_key_all_results = 'all_results'
         all_results = cache.get(cache_key_all_results)
+        #if nothing cached assemble index
         if all_results is None:
             #perform search of index to generate all results using parser generated above
-            all_results = searcher.search(query, limit=None, sortedby='iiif_path')
+            all_results = searcher.search(query, limit=None)
+            #sort results by iiif path using natsorted for numerical sorting
+            all_results = natsorted(all_results, key=lambda x: x['iiif_path'])
             #convert results to list of dictionaries for caching
             all_results = [dict(result) for result in all_results]
             #cache the results for future use
             cache.set(cache_key_all_results, json.dumps(all_results), timeout=86400)
         else:
-            #load results from cache
+            # Load results from cache
             all_results = json.loads(all_results)
         
         #total number of results
