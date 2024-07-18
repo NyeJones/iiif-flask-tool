@@ -33,7 +33,7 @@ class Config:
     #footer takes a dictionary, key is display text, value is hyperlink - links for site footer section
     #follow the format below and add relevant links
     FOOTER = { 
-        "International Image Interoperability Framework (IIIF)": "https://iiif.io/"
+        "International Image Interoperability Framework (https://iiif.io)": "https://iiif.io/"
         }
     #base urls takes a list of strings, these are used for security purposes to say which sites are ok to link to
     #if you're including an iiif api you'll need to add the provider to the list if not already there
