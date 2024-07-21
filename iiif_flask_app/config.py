@@ -13,6 +13,8 @@ class Config:
     MAIN_TITLE = ["Main title here"]
     #caption text takes list of strings
     CAPTION_TEXT = ["Caption text for home page introduction image"]
+    #caption link as dictionary, key is display text, value is hyperlink - link for caption
+    CAPTION_LINK = {"Caption link here": "https://gallica.bnf.fr/ark:/12148/btv1b8415234c.image"} 
     #home page long introduction takes a list of strings
     LONG_INTRO = ["Introduction text here."]
     #repositories takes a dictionary, for identifying iiif repository from iiif uri

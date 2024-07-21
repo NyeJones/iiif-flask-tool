@@ -23,6 +23,11 @@
 				{% for item in caption_text %}
 				<figcaption class="intro-capt"> {{ item }}</figcaption>
 				{% endfor %}
+				{% for key, value in caption_link.items() %}
+				<figcaption class="intro-capt">
+					<a class="capt-link" href="{{ value }}" target="_blank">{{ key }}</a>
+				</figcaption>
+				{% endfor %}
 			</figure>
 			<div class="intro-text">
 				{% for para in long_intro %}

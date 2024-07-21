@@ -388,6 +388,11 @@ a:hover {
     text-align: right;
     line-height: 1.5;
 }
+
+.capt-link {
+    color: #131e8f;
+}
+
 .intro-text {
     margin-top: 20px;
 }

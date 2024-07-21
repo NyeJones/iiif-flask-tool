@@ -367,6 +367,7 @@ intro_image = app.config['INTRO_IMAGE']
 #various text items to fill parts of the site
 main_title = app.config['MAIN_TITLE']
 caption_text = app.config['CAPTION_TEXT']
+caption_link = app.config['CAPTION_LINK']
 long_intro = app.config['LONG_INTRO']
 about_data = app.config['ABOUT']
 proj_team_data = app.config['PROJECT_TEAM']
@@ -385,7 +386,7 @@ base_urls = app.config ['BASE_URLS']
 csp = {
     'default-src': ['\'self\'', 'https://maxcdn.bootstrapcdn.com', 'https://ajax.googleapis.com'],
     'connect-src': ['\'self\''],
-    'img-src': ['\'self\'', 'data:'],
+    'img-src': ['\'self\''],
     'script-src': ['\'self\'', 'https://ajax.googleapis.com', 'https://maxcdn.bootstrapcdn.com', 'https://unpkg.com'],
     'style-src': ['\'self\'', 'https://maxcdn.bootstrapcdn.com', '\'unsafe-inline\''],
     'script-src-elem': ['\'self\'', 'https://unpkg.com', 'https://maxcdn.bootstrapcdn.com', 'https://ajax.googleapis.com', '\'unsafe-inline\''],
@@ -577,7 +578,7 @@ def main():
 @cache.cached(timeout=86400)
 def home():
     """Render home page html template."""
-    return render_template('home.html', main_title=main_title, caption_text=caption_text, 
+    return render_template('home.html', main_title=main_title, caption_text=caption_text, caption_link=caption_link, 
         long_intro=long_intro, background_image=background_image, intro_image=intro_image)
 
 @app.route('/about')
