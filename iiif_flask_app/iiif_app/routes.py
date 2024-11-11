@@ -32,11 +32,12 @@ footer_data = Config.FOOTER
 #dictionary of repositories and identifiers
 repositories = Config.REPOSITORIES
 
-#access the Whoosh index from the app configuration
+#access the Whoosh index, index lists for sidebar and cache from the app configuration
 ix = app.config['SEARCH_INDEX']
+index_lists = app.config['INDEX_LISTS']
 cache = app.config['CACHE']
 
-#this section contains the app routes for the creation of the website
+#the following section contains the app routes for the creation of the website
 #and rendering html templates
 #templates stored in 'templates' folder alongside the file for this script
 #cache used for routes that do not change due to user input
@@ -90,6 +91,7 @@ def search():
     repository = custom_get(param='repository')
     language = custom_get(param='language')
     material = custom_get(param='material')
+    author = custom_get(param='author')
 
     #check for query sent by form
     query = None
@@ -102,7 +104,7 @@ def search():
             #clean up query
             query = re.sub(r'\W+\s*', ' ', query).strip()
             #return query to results route with url parameters extracted above
-            return redirect(url_for('results', query=query, repository=repository, language=language, material=material))
+            return redirect(url_for('results', query=query, repository=repository, language=language, material=material, author=author))
 
     
     #return invalid query template if invalid or blank
@@ -125,9 +127,10 @@ def results():
     repository = custom_get(param='repository')
     language = custom_get(param='language')
     material = custom_get(param='material')
+    author = custom_get(param='author')
 
     #put queries in dictionary for use below in sidebar function
-    query_params = {'query': user_query, 'repository': repository, 'language': language, 'material': material}
+    query_params = {'query': user_query, 'repository': repository, 'language': language, 'material': material, 'author': author}
 
     #use Whoosh search index for search using query parameters
     with ix.searcher() as searcher:
@@ -139,7 +142,7 @@ def results():
         offset = (page - 1) * per_page
         
         #creates Whoosh parser for appropriate fields using search index
-        parser = MultifieldParser(['iiif_path', 'json_label', 'json_date', 'json_description', 'json_thumbnail'], ix.schema)
+        parser = MultifieldParser(['iiif_path', 'json_label', 'json_date', 'json_description', 'json_thumbnail', 'json_author'], ix.schema)
         #formulates a search query using parser and user query
         search_query = parser.parse(f'*{user_query}*')
 
@@ -157,7 +160,10 @@ def results():
         filters.append(language_query)
         material_parser = QueryParser('json_material', schema=ix.schema)
         material_query = material_parser.parse(material)
-        filters.append(material_query)         
+        filters.append(material_query)
+        author_parser = QueryParser('json_author', schema=ix.schema)
+        author_query = author_parser.parse(author)
+        filters.append(author_query)         
 
         #create combined query from filters and user query then search Whoosh index
         search_query = And([search_query] + filters)
@@ -174,29 +180,21 @@ def results():
         #create pagination using Flask Paginate library, 
         pagination = Pagination(page=page, per_page=per_page, total=total, record_name='results', css_framework='foundation')
 
-        #get sets of values for each sidebar query parameter from results
-        unique_repositories = set(result.get('json_repository') for result in results)
-        unique_languages = set(result.get('json_language') for result in results)
-        unique_materials = set(result.get('json_material') for result in results)
-
-        #remove question marks so 'Paper?' is treated same as 'Paper' in sidebar links, for example
-        unique_repositories = set(repository.replace('?', '') for repository in unique_repositories)
-        unique_languages = set(language.replace('?', '') for language in unique_languages)
-        unique_materials = set(material.replace('?', '') for material in unique_materials)
-
         #use function to get sidebar links for results page
         #these will redirect to another results page composed of any existing queries and new query including sidebar value choice
-        repository_links = sidebar_counts(results=results, item_names=unique_repositories, query_params=query_params, 
+        repository_links = sidebar_counts(results=results, index_lists=index_lists, query_params=query_params, 
             json_key='json_repository', item_key='repository')
-        language_links = sidebar_counts(results=results, item_names=unique_languages, query_params=query_params,
+        language_links = sidebar_counts(results=results, index_lists=index_lists, query_params=query_params,
             json_key='json_language', item_key='language')
-        material_links = sidebar_counts(results=results, item_names=unique_materials, query_params=query_params,
+        material_links = sidebar_counts(results=results, index_lists=index_lists, query_params=query_params,
             json_key='json_material', item_key='material')
+        author_links = sidebar_counts(results=results, index_lists=index_lists, query_params=query_params,
+            json_key='json_author', item_key='author')
 
         #returns rendered template with results subset for page, query string parameters, pagination, 
         #sidebar link data and total count of results 
         return render_template("results.html", results=results_subset, query_params=query_params, pagination=pagination,
-            repository_links=repository_links, language_links=language_links, material_links=material_links, count=total)
+            repository_links=repository_links, language_links=language_links, material_links=material_links, author_links=author_links, count=total)
 
 
 @app.route('/index')
@@ -214,7 +212,7 @@ def list_files():
 
         #creates Whoosh parser for appropriate fields using search index
         parser = MultifieldParser(['iiif_path', 'json_label', 'json_date', 'json_language', 'json_material',
-            'json_description', 'json_repository', 'json_thumbnail'], ix.schema)
+            'json_description', 'json_repository', 'json_thumbnail', 'json_author'], ix.schema)
         #as we are locating all files, wildcard search used on all fields
         query = parser.parse('*')
 
@@ -227,50 +225,45 @@ def list_files():
         #cache key for the complete results set
         cache_key_all_results = 'all_results'
         all_results = cache.get(cache_key_all_results)
+        #if nothing cached assemble index
         if all_results is None:
             #perform search of index to generate all results using parser generated above
-            all_results = searcher.search(query, limit=None, sortedby='iiif_path')
+            all_results = searcher.search(query, limit=None)
+            #sort results by iiif path using natsorted for numerical sorting
+            all_results = natsorted(all_results, key=lambda x: x['iiif_path'])
             #convert results to list of dictionaries for caching
             all_results = [dict(result) for result in all_results]
             #cache the results for future use
             cache.set(cache_key_all_results, json.dumps(all_results), timeout=86400)
         else:
-            #load results from cache
+            # Load results from cache if they are there
             all_results = json.loads(all_results)
         
         #total number of results
         total = len(all_results)
         #subset of results for appropriate page
         results_subset = all_results[offset: offset + per_page]
-        #create pagination using Flask Paginate library, 
+        #create pagination using Flask Paginate library
         pagination = Pagination(page=page, per_page=per_page, total=total, record_name='results', css_framework='foundation')
-       
-        #get sets of values for each sidebar query parameter from results
-        unique_repositories = set(result.get('json_repository') for result in all_results)
-        unique_languages = set(result.get('json_language') for result in all_results)
-        unique_materials = set(result.get('json_material') for result in all_results)
-
-        #remove question marks so 'Paper?' is treated same as 'Paper' in sidebar links, for example
-        unique_repositories = set(repository.replace('?', '') for repository in unique_repositories)
-        unique_languages = set(language.replace('?', '') for language in unique_languages)
-        unique_materials = set(material.replace('?', '') for material in unique_materials)
 
         #query params dictionary created for current search of all, can be augmented for sidebar links below
         query_params = {'query': '*'}
 
         #use function to get sidebar links for results page
         #these will redirect to another results page composed of any existing queries and new query including sidebar value choice
-        repository_links = sidebar_counts(results=all_results, item_names=unique_repositories, query_params=query_params, 
+        repository_links = sidebar_counts(results=all_results, index_lists=index_lists, query_params=query_params, 
             json_key='json_repository', item_key='repository')
-        language_links = sidebar_counts(results=all_results, item_names=unique_languages, query_params=query_params,
+        language_links = sidebar_counts(results=all_results, index_lists=index_lists, query_params=query_params,
             json_key='json_language', item_key='language')
-        material_links = sidebar_counts(results=all_results, item_names=unique_materials, query_params=query_params,
+        material_links = sidebar_counts(results=all_results, index_lists=index_lists, query_params=query_params,
             json_key='json_material', item_key='material')
+        author_links = sidebar_counts(results=all_results, index_lists=index_lists, query_params=query_params,
+            json_key='json_author', item_key='author')
 
         #returns rendered template with index subset for page, query string parameters, pagination, 
         #sidebar link data and total count of results 
-        return render_template('index.html', results=results_subset, query=query, pagination=pagination, 
-            language_links=language_links, repository_links=repository_links, material_links=material_links, count=total)
+        return render_template('index.html', results=results_subset, query=query, pagination=pagination, language_links=language_links, 
+            repository_links=repository_links, material_links=material_links, author_links=author_links, count=total)
 
 @app.route('/viewer.html', methods=['GET'])
 def viewer():
@@ -281,8 +274,8 @@ def viewer():
     Returns:
     - Rendered template containing a Mirador IIIF viewer for manifest.
     - Done for each displayed link in results/index.
-
     """
+    
     manifest_url = request.args.get('manifest')
     #use function to sanitise url with nh3 library
     manifest_url = extract_html_text(manifest_url)

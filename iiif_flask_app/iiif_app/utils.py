@@ -5,6 +5,7 @@ import logging
 import warnings
 import string
 import nh3
+from unidecode import unidecode
 from collections import defaultdict
 from natsort import natsorted
 from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
@@ -26,6 +27,7 @@ def remove_punctuation(s):
     Returns:
     str: The input string with punctuation characters replaced by spaces.
     """
+
     translation_table = str.maketrans(string.punctuation, ' ' * len(string.punctuation))
     return s.translate(translation_table)
 
@@ -40,6 +42,7 @@ def clean_text(text):
     Returns:
     str: The cleaned text.
     """
+    
     text = text.replace('\n', ' ').replace('\r', '')
     text = re.sub("ʼ", "'", text)
     text = re.sub(' +', ' ', text)
@@ -60,6 +63,7 @@ def extract_strings_and_integers(data):
     This function recursively traverses the input data structure and yields strings and integers
     encountered along the way. It skips over other data types.
     """
+
     if isinstance(data, dict):
         for value in data.values():
             yield from extract_strings_and_integers(value)
@@ -73,35 +77,47 @@ def extract_strings_and_integers(data):
 def extract_html_text(value):
     """
     Extracts text content from HTML using Beautiful Soup,
-    performs data sanitation using the nh3 library,
+    performs data sanitation using the nh3 library, string clean-up with function
     handles input errors and logs them.
 
     Parameters:
-    - value (str, list or dict): The content to extract text from.
+    - value (str, list, or dict): The content to extract text from.
 
     Returns:
-    - str: Extracted text content from HTML.
+    - list: Extracted text content from HTML as a list of strings.
 
     Notes:
-    This function takes HTML content as input and uses nh3 and Beautiful Soup to sanitise and extract the text content.
+    This function takes HTML content as input and uses nh3, string cleaning and Beautiful Soup to sanitise and extract the text content.
     If the input contains lists or dictionaries, it extracts strings and integers recursively using the function
-    `extract_strings_and_integers` (from the values in dictionary), 
-    converts them to a comma-separated string, and then parses any resulting HTML content. 
+    `extract_strings_and_integers` (from the values in dictionary), and parses any resulting HTML content. 
     Any errors encountered during the extraction process are logged using the logging module.
     """
     try:
+        #extract strings and integers recursively to list format
         if isinstance(value, (list, str, dict)):
-            value = list(extract_strings_and_integers(value))
-            value = ', '.join(value)
-        clean_value = nh3.clean(value)
-        soup = BeautifulSoup(clean_value, 'html.parser')
-        text = soup.get_text()
-        return text
+            value_list = list(extract_strings_and_integers(value))
+        #create an empty list to store cleaned and extracted text
+        cleaned_text_list = []
+        #loop through the extracted values
+        for item in value_list:
+            #clean each item using nh3
+            nh3_value = nh3.clean(item)
+            #string clean up/standardisation
+            clean_value = clean_text(nh3_value)          
+            #parse the cleaned HTML using BeautifulSoup
+            soup = BeautifulSoup(clean_value, 'html.parser')      
+            #extract text from the parsed HTML
+            text = soup.get_text()
+            #remove leading and trailing commas and semicolons
+            text = text.strip(';,')
+            #if not a blank string, add text to list
+            if text.strip():
+                cleaned_text_list.append(text)
+        return cleaned_text_list
     except Exception as e:
-        # Log the error for debugging purposes
+        #log any errors for debugging purposes
         logging.error(f'Error in extract_html_text: {e}', exc_info=True)
         return None
-
 
 def custom_get(param='', default_value='*'):
     """
@@ -119,6 +135,7 @@ def custom_get(param='', default_value='*'):
     """
     try:
         response = request.args.get(param)
+        #checking if non-empty string
         if isinstance(response, str) and response.strip():
             clean_response = nh3.clean(response)
             return clean_response
@@ -157,29 +174,36 @@ def custom_get_int(param):
 
 def get_metadata_value(metadata, label_pattern):
     """
-    Get the value from metadata based on whether label contains a regex,
-    use for extracting different parts of metadata for 'language', 'date', etc.
-    
-    Each item in metadata should be a dictionary with keys of 'label' and 'value'.
-    Check 'label' value for regex and if there extract 'value' value.
+    Get values from metadata where the label matches a regex pattern.
+    This can be used to extract specific metadata like 'language', 'date', etc.
+
+    Each item in the metadata should be a dictionary with keys 'label' and 'value'.
+    The function checks if the 'label' matches the provided regex pattern, and if it does,
+    the corresponding 'value' is added to the result list.
 
     Parameters:
-    - metadata (list): list of metadata entries.
-    - label_pattern (str): regex pattern to match the label.
+    - metadata (list): A list of dictionaries containing metadata entries. Each dictionary
+      needs a 'label' and 'value' key to be considered.
+    - label_pattern (str): The regex pattern to match against the 'label' field.
 
-    Returns
-    - str: the value corresponding to matched label pattern or 'N/A' if any exception occurs.
+    Returns:
+    - list: A list of values corresponding to matched label patterns. If no match is found,
+      or if any exception occurs, it returns ['N/A'].
     """
     try:
+        metadata_vals = []
         for item in metadata:
-            if item['label'] is not None:
+            if item.get('label') and item.get('value'):
                 label_str = str(item['label'])
                 if re.search(label_pattern, label_str, re.IGNORECASE):
-                        return item['value']
-        return 'N/A'
+                        metadata_vals.append(item['value'])
+        if not metadata_vals:
+            return ['N/A']
+        else:
+            return metadata_vals
     except Exception as e:
         print(f"An error occurred: {e}")
-        return 'N/A'
+        return ['N/A']
 
 def safe_json_get(json_object, key, index=None, default=None):
     """
@@ -213,50 +237,67 @@ def safe_json_get(json_object, key, index=None, default=None):
 
 def json_value_extract_clean(json_value):
     """
-    Fully extract, sanitise and clean extracted json value.
-    If value is None return 'N/A'.
-    Use extract_html_text to sanitise with nh3 and fully extract any html.
-    Use clean_text to standardise aspects of spacing and formatting.
-    Returns clean text string of json_value or 'N/A'.
-    """
-    if json_value is None:
-        return 'N/A'
-    else:
-        json_value_extract = extract_html_text(json_value)
-        if json_value_extract:
-            json_value_clean = clean_text(json_value_extract)
-            return json_value_clean
-        else:
-            return 'N/A'
+    Extract, sanitize, and clean JSON values.
 
-def sidebar_counts(results, json_key, item_key, item_names, query_params):
-    """
-    Count occurrences of items in search results for sidebar links.
-    Sanitise all parameters to make sure they are correct type.
-    Count different values of json_key e.g. "json_repository" in results.
-    If all words of a value appear in another value, e.g. 'Persian' in 'Arabic and Persian', add the count of that item to its count.
-    For each link, update the query parameters from previous search to incorporate a sidebar value.
-    Use nh3 to validate the links, deal with ampersand encoding.
-    Get current count for the sidebar value from counts done above.
-    Create dictionary for each sidebar item with count and link to update the current results
-    incorporating that item and append to list for all links for a particular sidebar value e.g. 'Language'.
+    This function handles various types of JSON values (e.g., strings, lists, or dictionaries) 
+    and ensures the extraction of text content while sanitizing any HTML. It uses the 
+    `extract_html_text` function to clean and standardize the content. If the input is 
+    None, empty, or cannot be processed, it returns ['N/A']. Otherwise, it returns a cleaned 
+    and fully extracted list of strings.
 
     Parameters:
-    - results (list): List of dictionaries for each result.
-    - json_key (str): JSON key to extract sidebar type from each result, e.g. 'json_repository'.
-    - item_key (str): Key to identify items in the sidebar, e.g. 'repository'.
-    - item_names (list): (set processed) list of item names for counting.
-    - query_params (dict): Dictionary of query parameters with counts from previous results.
+    - json_value_ls (list): A list of JSON values (which can be strings, lists, or dictionaries) 
+      to extract and clean.
 
     Returns:
-    - list: Sorted list of dictionaries containing item details for sidebar links for relevant sidebar category.
+    - list: A list of cleaned text values extracted from the JSON, or ['N/A'] if the content 
+            is invalid, empty, or cannot be processed.
+    """
+    #if the json_value is None, return ['N/A'] as a fallback
+    if not json_value:
+        return ['N/A']
+    else:
+        json_value_extract_ls = []
+        #use extract_html_text to sanitize and extract any HTML content into a list of strings
+        json_value_extract = extract_html_text(json_value)
+        json_value_extract_ls.extend(json_value_extract)
+        #if the extracted value contains valid content, return it
+        if json_value_extract_ls:
+            return json_value_extract_ls
+        else:
+            #if the extraction returns no content, return ['N/A'] as a fallback
+            return ['N/A']
+
+def sidebar_counts(results, query_params, index_lists, json_key, item_key):
+    """
+    Generates a sorted list of links for a sidebar section based on the provided input parameters.
+
+    This function takes a list of results and generates links for each unique item 
+    in a specified index list. It counts how many times each item appears in the 
+    results, sanitizes the item names (removing punctuation and handling case 
+    variations), and generates a clean URL for each item. The links are sorted by 
+    the item count in descending order and alphabetically by item name in case 
+    of ties in count.
+
+    Parameters:
+    - results (list): List of dictionaries for content of each result.
+    - json_key (str): JSON key to extract sidebar type from each result, e.g. 'json_repository'.
+    - index_lists (dict): A dictionary containing lists of items for each index category, accessed via item_key.
+    - item_key (str): Key to identify items in the sidebar, e.g. 'repository'.
+    - query_params (dict): Dictionary of query parameters from previous results.
+
+    Returns:
+    list: A list of dictionaries containing the following keys for each item for each sidebar link:
+        - `item_key`: The item name.
+        - `search_link`: A URL to search for that item from within current results.
+        - `count`: The number of results matching the item.
     """
     
     #validate input parameter data types
     if not isinstance(results, list):
         raise ValueError('Results must be a list of dictionaries')
-    if not isinstance(item_names, (list, set)):
-        raise ValueError('Unique repositories must be a list or set')
+    if not isinstance(index_lists, dict):
+        raise ValueError('Index lists must be a list')
     if not isinstance(query_params, dict):
         raise ValueError('Query parameters must be provided as a dictionary')
     if not isinstance(json_key, str):
@@ -264,70 +305,73 @@ def sidebar_counts(results, json_key, item_key, item_names, query_params):
     if not isinstance(item_key, str):
         raise ValueError('item_key must be a string')
 
-    #do initial count of items for json_key
-    item_counts = {}
-    for result in results:
-        item = result.get(json_key)
-        #remove question marks so 'Morocco?' is treated same as 'Morocco' in sidebar links, for example
-        item = item.replace('?', '')
-        if len(item) > 70:
-            item = item[:70] + '...'
-        if item in item_counts:
-            item_counts[item] += 1
-        else:
-            item_counts[item] = 1
-    
-    #create cumulative_counts dictionary
-    cumulative_counts = defaultdict(int)
+    #access correct index list for specific sidebar section
+    #contains all valid categories for that sidebar section
+    index_list = index_lists[item_key]
 
-    #tokenize each key in item counts
-    for key in item_counts:
-        key_words = key.replace('-', ' ')
-        key_words = set(remove_punctuation(key).split())
-        #for each tokenized key loop through all other keys, tokenized
-        for other_key, count in item_counts.items():
-            other_key_words = other_key.replace('-', ' ')
-            #if key is different to other key but all words in other key present in key add other key count to count for the key
-            #this adds counts for substring keys to the key counts
-            if key != other_key and all(word in remove_punctuation(other_key_words).split() for word in key_words):
-                cumulative_counts[key] += count
-
-    #add on substring counts for each key
-    for key in item_counts:
-        item_counts[key] += cumulative_counts[key]
-
-    #create links for sidebar item
-    item_links = []
+    #this section removes duplicates from the index list
+    #includes removing duplicate items in different order: e.g. 'Fes, Morocco' and 'Morocco, Fes'
     items_done = []
-    #for each item in links get the query parameters and update item key with item name
-    #so repository would be updated to a repository name
-    for item_name in item_names:
-        #first remove duplicate items in different order: e.g. 'Fes, Morocco' and 'Morocco, Fes'
-        #convert to set and add to done list, if already in done list don't create sidebar link
-        item_set = set(remove_punctuation(item_name).split())
+    unique_index_list = []
+    for ind_item in index_list:
+        # Normalize with unidecode, including diacritical marks, and remove punctuation for comparison purposes
+        normalized_item = unidecode(ind_item)
+        item_set = set(remove_punctuation(normalized_item).split())
+        #if item set already found in items done don't include
         if item_set in items_done:
             continue
+        #if item set not found in items done, add item to unique index list
+        #and also items done list
         else:
+            unique_index_list.append(ind_item)
             items_done.append(item_set)
-            query_params_copy = query_params.copy()
-            query_params_copy[item_key] = item_name
-
-            #use this to create a link for updated results incorporating that item name, sanitised with nh3
-            link = url_for('results', **query_params_copy)
-            clean_link = nh3.clean(link)
-            clean_link = link.replace('&amp;', '&')
             
-            #if item name is long reduce length to find relevant count in item_counts
-            if len(item_name) > 70:
-                item_name = item_name[:70] + '...'
-            item_count = item_counts.get(item_name, 0)
-            #append data for each item to list of item data for sidebar
+    #this section creates a list of index item links
+    item_links = []
+    #iterate through each index item and the results for relevant sidebar section
+    #count occurrences of index item in results
+    for ind_item in unique_index_list:
+        #establish count for item
+        item_count = 0
+        #remove question marks and dashes and normalize with unidecode for purpose of comparison
+        ind_item = ind_item.replace('?', '')
+        param_item = ind_item.replace('-', ' ')
+        param_item = unidecode(param_item)
+        #copy query string and make a new query string with index item
+        #under key for relevant sidebar section
+        query_params_copy = query_params.copy()
+        query_params_copy[item_key] = ind_item
+        
+        #count occurrence of index item in all results for relevant section
+        #iterate through results and extract relevant content
+        for result in results:
+            res_item = result.get(json_key)
+            #remove question marks and dashes and normalize with unidecode for purpose of comparison
+            res_item = res_item.replace('?', '').replace('-', ' ')
+            res_item = unidecode(res_item)
+            #check index item words against results words, if all the same add 1 to index item count
+            #this takes into account instances like 'Fes, Morocco' and 'Morocco, Fes'
+            #where same item has different order
+            if all(word in remove_punctuation(res_item).split() for word in remove_punctuation(param_item).split()):
+                item_count += 1
+
+        #create link for index item using updated query string
+        link = url_for('results', **query_params_copy)
+        #sanitize link and reformat ampersand
+        clean_link = nh3.clean(link)
+        clean_link = link.replace('&amp;', '&')
+        
+        #if item count is above zero add dictionary for item to item links list
+        #this will be used for that index item within relevant sidebar section
+        #includes link for updated query, count and item text
+        if item_count > 0:
             item_links.append({
-                item_key: item_name,
+                item_key: ind_item,
                 'search_link': clean_link,
                 'count': item_count
             })
-
-    #return sorted list of item links for relevant sidebar section
-    sorted_item_links = sorted(item_links, key=lambda x: x['count'], reverse=True)
+        
+    #sort by count and alphabetically by item text if counts match
+    sorted_item_links = sorted(item_links, key=lambda x: (-x['count'], x[item_key].lower()))
+    #return all links for the sidebar section
     return sorted_item_links

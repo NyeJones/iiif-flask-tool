@@ -42,7 +42,7 @@ document.addEventListener('click', function(event) {
     if (closeButton) {
         // Get the key from the data-key attribute of the clicked button
         var key = closeButton.dataset.key;
-        // Call the removeItem function with the key value
+        // Call the removeItem function (below) with the key value
         removeItem(key);
     }
 });
@@ -66,11 +66,12 @@ function removeItem(key) {
         valueElement.innerText = '*';
     }
 
-    // Trigger updateResults function for section with its key
+    // Trigger updateResults function (below) for section with its key
     updateResults(key);
 }
 
-// Takes key for removed item and uses it to update key in URL query string
+// Takes key for removed item and uses it to update key in URL query string 
+// and redirect to that page using updated string
 function updateResults(key) {
     // Get current URL
     var currentUrl = window.location.href;
@@ -106,9 +107,9 @@ function toggleSection(button) {
     // Toggle the visibility of the content section by adding/removing the "show-all-items" class
     itemList.classList.toggle("show-all-items");
 
-    // Update button text dynamically, to say "Show More" or "Show Less"
-    var buttonText = button.textContent;
-    button.textContent = buttonText === "Show More" ? "Show Less" : "Show More";
+    // Toggle button text using data attributes for "show more" and "show less"
+    var isExpanded = itemList.classList.contains('show-all-items');
+    button.textContent = isExpanded ? button.dataset.showLess : button.dataset.showMore;
 
     // Check the number of items in the list
     var itemElements = itemList.querySelectorAll('.list-group-item');

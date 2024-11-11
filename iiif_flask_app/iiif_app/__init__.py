@@ -26,12 +26,14 @@ def create_app():
 	cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache'})
 	app.config['CACHE'] = cache
 
-	# Initialize the app index and index data using imported function
+	# Initialize the app index, index lists for sidebar and index data using imported function
 	index_directory = 'index'
 	files_directory = 'iiif_app/files'
-	ix = initialize_import_index(index_dir=index_directory, files_directory=files_directory)
+	ix, index_lists = initialize_import_index(index_dir=index_directory, files_directory=files_directory)
 	#add index to app
 	app.config['SEARCH_INDEX'] = ix
+	#add index lists for sidebar operations to app
+	app.config['INDEX_LISTS'] = index_lists
 
 	#create route to static folder for css and javascript files
 	app.static_folder = 'static'

@@ -195,7 +195,7 @@ a:hover {
 /* Sidebar item and value styles */
 .list-group-item a {
     display: block;
-    padding: 20px 15px;
+    padding: 5px;
     position: relative;
     text-decoration: none;
 }
@@ -206,11 +206,14 @@ a:hover {
 }
 
 .sidebar-list-item {
-    position: absolute;
-    right: 5%;
-    top: 50%;
-    transform: translateY(-50%);
-    text-align: left;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+    padding: 0;
+    width: 80%;
 }
 
 .sidebar-list-count {
@@ -220,6 +223,31 @@ a:hover {
     top: 50%;
     transform: translateY(-50%);
     text-align: right;
+    width: 100%
+}
+
+.sidebar-full-text {
+    visibility: hidden;
+    border-radius: 4px;
+    opacity: 0;
+    transition: visibility 0s, opacity 0.3s ease;
+    position: absolute;
+    left: 110%;
+    top: 0;
+    background-color: #fff;
+    color: #333;
+    padding: 5px;
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    white-space: normal;
+    font-size: 14px;
+    width: 100px;
+}
+
+.list-group-item:hover .sidebar-full-text {
+    visibility: visible;
+    opacity: 1;
 }
 
 /* Sidebar More button styles */
@@ -428,7 +456,6 @@ a:hover {
 .navbar .container-fluid ul {
     display: flex;
     list-style: none;
-    margin: 0;
     padding: 0;
 }
 
@@ -461,6 +488,7 @@ a:hover {
     border: 1px solid #ccc;
     border-radius: 3px;
     margin-right: 3px;
+    margin-left: 10px;
 }
 
 .navbar .btn {
@@ -543,5 +571,9 @@ footer .container-fluid {
         max-width: 100%;
         min-width: 100%;
     }
+    .sidebar-full-text {
+       left: 75%;
+       top: 100%;
+   }
 }
 

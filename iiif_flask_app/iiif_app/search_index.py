@@ -40,7 +40,11 @@ def initialize_import_index(index_dir='index', files_directory='iiif_app/files')
         json_description=TEXT(stored=True, analyzer=no_stop_analyzer, sortable=True),
         json_repository=TEXT(stored=True, analyzer=no_stop_analyzer, sortable=True),
         json_thumbnail=TEXT(stored=True, analyzer=no_stop_analyzer, sortable=True),
+        json_author=TEXT(stored=True, analyzer=no_stop_analyzer, sortable=True),
         )
+
+    #create index sets for use in sidebar
+    index_lists = {'repository': set(), 'language': set(), 'material': set(), 'author': set()}
 
     #create or open the index file using the schema created above
     if not os.path.exists(index_dir):
@@ -53,23 +57,29 @@ def initialize_import_index(index_dir='index', files_directory='iiif_app/files')
         for file in files:
             if file.endswith('json'):
                 file_path = os.path.join(root, file)
-                with open(file_path, 'r', encoding='utf-8') as json_file:
-                    json_data = json.load(json_file)
-                    all_json_data.append(json_data)
+                #check if json can be loaded and append data to list
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as json_file:
+                        json_data = json.load(json_file)
+                        all_json_data.append(json_data)
+                #if there is an error print filename to console
+                except json.JSONDecodeError as e:
+                    print(f"Error decoding JSON in file {file_path}: {e}")
 
     #index the file paths in the 'files' directory
     #use asyncwriter imported above to avoid concurrency locks on writing to index
     writer = AsyncWriter(ix)
 
-    #check for duplicate iiif records and empty id fields
+    #set to check for duplicate iiif records and empty id fields
     seen_ids = set()
+    #build a list of unique records to remove any duplicate data
     unique_json_records = []
-    #loop through records
+    #loop through records in extracted json data
     for json_record in all_json_data:
         #get iiif id from record
         record_id = safe_json_get(json_record, '@id')
-        #use function to sanitise data with nh3 library
-        record_id = extract_html_text(record_id)
+        #use function to sanitise data with nh3 library and extract as string
+        record_id = extract_html_text(record_id)[0]
         #if None or duplicate print message
         if record_id is None:
             print('Empty ID field in IIIF record')
@@ -81,25 +91,34 @@ def initialize_import_index(index_dir='index', files_directory='iiif_app/files')
             seen_ids.add(record_id)
 
 
-    #loop through each iiif manifest json file
-    #use functions to extract and prepare data
+    #loop through the data from each iiif manifest json file
+    #use functions to extract and prepare relevant data
+    #these are used for sidebar and whoosh index respectively
     for item in unique_json_records:
         
         #extract unique iiif id and sanitise
-        json_id = safe_json_get(item, '@id')
-        json_id = extract_html_text(json_id)
+        json_id_val = safe_json_get(item, '@id')
+        json_id = extract_html_text(json_id_val)[0]
 
         #for other values extract, sanitise and clean data, return 'N/A' if None
-        json_label = safe_json_get(item, 'label')
-        json_label = json_value_extract_clean(json_label)
-        
-        json_description = safe_json_get(item, 'description')
-        json_description = json_value_extract_clean(json_description)
+        #extract all matching values as list
+        #convert list into string for each category, joined with '|' where more than one value
+        #finish with a list of values and a joined list of values for each category
+        #these are used for sidebar and whoosh index respectively
 
-        #create default value of 'N/A' for additional metadata categories
-        json_date = 'N/A'
-        json_language = 'N/A'
-        json_material = 'N/A'
+        json_label_val = safe_json_get(item, 'label')
+        json_label_ls = json_value_extract_clean(json_label_val)
+        json_label = ' | '.join(json_label_ls)
+        
+        json_description_val = safe_json_get(item, 'description')
+        json_description_ls = json_value_extract_clean(json_description_val)
+        json_description = ' | '.join(json_description_ls)
+
+        #create default value of ['N/A'] for additional metadata categories
+        json_date_ls = ['N/A']
+        json_language_ls = ['N/A']
+        json_material_ls = ['N/A']
+        json_author_ls = ['N/A']
 
         #use function to extract iiif metadata if there
         metadata = safe_json_get(item, 'metadata')
@@ -110,16 +129,30 @@ def initialize_import_index(index_dir='index', files_directory='iiif_app/files')
             #this is because metadata categories are decided on by institutions and
             #not standardised as part of the iiif schema
             #we also use our json_value_extract_clean to sanitise, fully extract and clean json values
-            #if category not there make 'N/A'
 
-            json_date = get_metadata_value(metadata, r'date')
-            json_date = json_value_extract_clean(json_date)
+            #extract all matching values as list
+            #convert list into string for each category, joined with '|' where more than one value
+            #finish with a list of values and a joined list of values for each category
+            #these are used for sidebar and whoosh index respectively
 
-            json_language = get_metadata_value(metadata, r'language')
-            json_language = json_value_extract_clean(json_language)
+            json_date_ls = get_metadata_value(metadata, r'date')
+            json_date_ls = json_value_extract_clean(json_date_ls)
+            json_date = ' | '.join(json_date_ls)
 
-            json_material = get_metadata_value(metadata, r'material')
-            json_material = json_value_extract_clean(json_material)
+            json_language_ls = get_metadata_value(metadata, r'^(text language|language)\S*$')
+            json_language_ls = json_value_extract_clean(json_language_ls)
+            index_lists['language'].update(json_language_ls)
+            json_language = ' | '.join(json_language_ls)
+
+            json_material_ls = get_metadata_value(metadata, r'material')
+            json_material_ls = json_value_extract_clean(json_material_ls)
+            index_lists['material'].update(json_material_ls)
+            json_material = ' | '.join(json_material_ls)
+
+            json_author_ls = get_metadata_value(metadata, r'^(author|creator)\S*$')
+            json_author_ls = json_value_extract_clean(json_author_ls)
+            index_lists['author'].update(json_author_ls)
+            json_author = ' | '.join(json_author_ls)
 
         #create default value of 'N/A' for repository
         json_repository = 'N/A'
@@ -131,6 +164,7 @@ def initialize_import_index(index_dir='index', files_directory='iiif_app/files')
             #if repository key found in id then give it repository value
             if re.search(key, json_id):
                 json_repository = value
+                index_lists['repository'].add(json_repository)
                 break
 
         #use Beautiful Soup function to extract thumbnail image id
@@ -144,8 +178,8 @@ def initialize_import_index(index_dir='index', files_directory='iiif_app/files')
             iiif_image_url = safe_json_get(service, '@id')
         else:
             iiif_image_url = safe_json_get(resource, '@id')        
-        #perform data sanitisation on url
-        iiif_image_url = extract_html_text(iiif_image_url)
+        #perform data sanitisation on url and extract as string
+        iiif_image_url = extract_html_text(iiif_image_url)[0]
 
         #suffix patterns to remove from image id if there
         suffix_remove_patterns = [r'/full/.*/0/.*jpg']
@@ -172,6 +206,7 @@ def initialize_import_index(index_dir='index', files_directory='iiif_app/files')
             json_description=json_description,
             json_repository=json_repository,
             json_thumbnail=json_thumbnail,
+            json_author=json_author
             )
 
     #commit data for all manifests to the Whoosh index
@@ -179,5 +214,5 @@ def initialize_import_index(index_dir='index', files_directory='iiif_app/files')
 
     #open the Whoosh search index for searching with all manifest data included
     ix = open_dir(index_dir)
-    return ix
+    return ix, index_lists
 

@@ -41,6 +41,7 @@
                             <!-- name of each repository and number of items connected to it in files -->
                             <span class="sidebar-list-item col">{{ repository_link.repository }}</span>
                             <span class= "sidebar-list-count col">{{ repository_link.count }}</span>
+                            <span class="sidebar-full-text">{{ repository_link.repository }}</span>
                         </a>
                     </li>
                     {% endfor %}
@@ -48,7 +49,39 @@
                 <!-- button to 'Show More' or 'Show Less' depending on whether expanded, initially unexpanded and 'Show More' visible -->
                 <!-- javascript for this contained in static js file -->
                 <div class=" row more-button-container">
-                    <button class="more-button btn" data-section="repositories">Show More</button>
+                    <button class="more-button btn" data-section="repositories"
+                            data-show-more="Show More" data-show-less="Show Less">
+                            Show More
+                    </button>
+                </div>
+            </div>
+            <!-- container for author data -->
+            <div class="sidebar-section authors">
+                <!-- title of section and loop through the author link data -->
+                <h6 class="sidebar-section-header text-center text-white">Author</h6>
+                <!-- data-section linked to show more button below to expand section -->
+                <ul class="list-group list-group-root" data-section="authors">
+                    {% for author_link in author_links %}
+                    <!-- if there are more than 5 items initially just show the first 5 items -->
+                    <li class="d-flex list-group-item {% if loop.index0 < 5 %}initial-items{% endif %}">
+                        <!-- search link if user wants to narrow search by that author, creates new search results -->
+                        <!-- link sanitised with nh3 and csp -->
+                        <a class="d-flex justify-content-between align-items-center" href="{{ author_link.search_link }}">
+                            <!-- name of each repository and number of items connected to it in files -->
+                            <span class="sidebar-list-item col">{{ author_link.author }}</span>
+                            <span class= "sidebar-list-count col">{{ author_link.count }}</span>
+                            <span class="sidebar-full-text">{{ author_link.author }}</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                <!-- button to 'Show More' or 'Show Less' depending on whether expanded, initially unexpanded and 'Show More' visible -->
+                <!-- javascript for this contained in static js file -->
+                <div class=" row more-button-container">
+                    <button class="more-button btn" data-section="authors"
+                            data-show-more="Show More" data-show-less="Show Less">
+                            Show More
+                    </button>
                 </div>
             </div>
             <!-- container for language data -->
@@ -66,6 +99,7 @@
                             <!-- name of language and number of items connected to it in files -->
                             <span class="sidebar-list-item col">{{ language_link.language }}</span>
                             <span class= "sidebar-list-count col">{{ language_link.count }}</span>
+                            <span class="sidebar-full-text">{{ language_link.language }}</span>
                         </a>
                     </li>
                     {% endfor %}
@@ -73,7 +107,10 @@
                 <!-- button to 'Show More' or 'Show Less' depending on whether expanded, initially unexpanded and 'Show More' visible -->
                 <!-- javascript for this contained in static js file -->
                 <div class="row more-button-container">
-                    <button class="more-button btn" data-section="languages">Show More</button>
+                    <button class="more-button btn" data-section="languages"
+                            data-show-more="Show More" data-show-less="Show Less">
+                            Show More
+                    </button>
                 </div>  
             </div>
             <!-- container for materials data -->
@@ -91,13 +128,17 @@
                             <!-- name of material and number of items connected to it in files -->
                             <span class="sidebar-list-item col">{{ material_link.material }}</span>
                             <span class= "sidebar-list-count col">{{ material_link.count }}</span>
+                            <span class="sidebar-full-text">{{ material_link.material }}</span>
                         </a>
                     </li>
                     {% endfor %}
                 </ul>
                 <!-- button to 'Show More' or 'Show Less' depending on whether expanded, initially unexpanded and 'Show More' visible -->         <!-- javascript for this contained in static js file -->
                 <div class="row more-button-container">
-                    <button class="more-button btn" data-section="materials">Show More</button>
+                    <button class="more-button btn" data-section="materials"
+                            data-show-more="Show More" data-show-less="Show Less">
+                            Show More
+                    </button>
                 </div>
             </div>
         </div>
@@ -110,7 +151,7 @@
                     <div class="row">
                         <!-- Each listing begins with iiif link to viewer page which opens link in embedded Mirador viewer-->
                         <div class="col iiif-link">
-                            <a href="viewer.html?manifest={{ result['iiif_path'] }}", target="_blank", class="file-link">Document viewer</a>
+                            <a href="viewer.html?manifest={{ result['iiif_path'] }}", target="_blank", class="file-link">{{ result['json_label'] }}</a>
                             <!-- also contains a toggle button which initiates javascript that expands/unexpands the 'hidden content' below -->
                             <!-- javascript contained in static js file -->
                         </div>
@@ -129,10 +170,14 @@
                                             <img src="{{ result['json_thumbnail'] }}" class="img-fluid" alt="Thumbnail">
                                         </a>
                                     </div>
-                                    <!-- check if each item of metadata is not 'N/A and, if so, show the item'-->
-                                    <!-- result for iiif label -->
-                                    {% if result['json_label'] != 'N/A' %}
-                                    <span class="metadata iiif-label"><b>Label</b>: {{ result['json_label'] }}</span>
+                                    <!-- check if each item of metadata is not 'N/A and, if so, show the item-->
+                                    <!-- result for author -->
+                                    {% if result['json_author'] != 'N/A' %}
+                                    <span class="metadata author"><b>Author</b>: {{ result['json_author'] }}</span>
+                                    {% endif %}
+                                    <!-- result for repository -->
+                                    {% if result['json_repository'] != 'N/A' %}
+                                    <span class="metadata repository"><b>Repository</b>: {{ result['json_repository'] }}</span>
                                     {% endif %}
                                     <!-- result for date -->
                                     {% if result['json_date'] != 'N/A' %}
