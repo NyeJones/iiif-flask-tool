@@ -39,8 +39,13 @@ def create_app():
 	app.static_folder = 'static'
 	#import config data from config file, including security key, into app
 	app.config.from_object(Config)
-	# Set SESSION_COOKIE_SAMESITE to 'Lax'
-	app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+	#set SESSION_COOKIE_SAMESITE to 'Lax'
+	SESSION_COOKIE_SAMESITE = 'Lax'
+	#prevents JavaScript from accessing the session cookie, XSS attack protection
+	SESSION_COOKIE_HTTPONLY = True
+	#ensures that cookies are only transmitted over HTTPS connections
+	#change to True for production if using https, so cookies are sent over secure channels
+	SESSION_COOKIE_SECURE = False  # Since HTTPS might not be used in development
 
 	#list of base urls for validation in Mirador viewer and thumbnails
 	#more base urls can be added to the list in the config file, following pattern there
