@@ -26,10 +26,22 @@ def create_app():
 	cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache'})
 	app.config['CACHE'] = cache
 
-	# Initialize the app index, index lists for sidebar and index data using imported function
-	index_directory = 'index'
-	files_directory = 'iiif_app/files'
-	ix, index_lists = initialize_import_index(index_dir=index_directory, files_directory=files_directory)
+	#ensure the app context is available when initializing the search index
+	with app.app_context():
+		#check if the index and sidebar lists are already cached
+		index_lists = cache.get('index_lists')
+		ix = cache.get('search_index')
+		#if not present in cache add to cache
+		if not ix or not index_lists:
+			#initialize the app index, index lists for sidebar and index data using imported function
+			index_directory = 'index'
+			files_directory = 'iiif_app/files'
+			ix, index_lists = initialize_import_index(index_dir=index_directory, files_directory=files_directory)
+
+			#cache the result to avoid re-indexing in subsequent requests
+			cache.set('search_index', ix, timeout=86400)
+			cache.set('index_lists', index_lists, timeout=86400)
+
 	#add index to app
 	app.config['SEARCH_INDEX'] = ix
 	#add index lists for sidebar operations to app
