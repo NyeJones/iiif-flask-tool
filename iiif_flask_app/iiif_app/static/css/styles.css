@@ -232,7 +232,7 @@ a:hover {
     opacity: 0;
     transition: visibility 0s, opacity 0.3s ease;
     position: absolute;
-    left: 110%;
+    left: 1300px;
     top: 0;
     background-color: #fff;
     color: #333;
