@@ -26,21 +26,12 @@ def create_app():
 	cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache'})
 	app.config['CACHE'] = cache
 
-	#ensure the app context is available when initializing the search index
-	with app.app_context():
-		#check if the index and sidebar lists are already cached
-		index_lists = cache.get('index_lists')
-		ix = cache.get('search_index')
-		#if not present in cache add to cache
-		if not ix or not index_lists:
-			#initialize the app index, index lists for sidebar and index data using imported function
-			index_directory = 'index'
-			files_directory = 'iiif_app/files'
-			ix, index_lists = initialize_import_index(index_dir=index_directory, files_directory=files_directory)
+	#directory paths for index and files
+	index_directory = 'index'
+	files_directory = 'iiif_app/files'
 
-			#cache the result to avoid re-indexing in subsequent requests
-			cache.set('search_index', ix, timeout=86400)
-			cache.set('index_lists', index_lists, timeout=86400)
+	#initialize the app index, index lists for sidebar and index data using imported function
+	ix, index_lists = initialize_import_index(index_dir=index_directory, files_directory=files_directory)
 
 	#add index to app
 	app.config['SEARCH_INDEX'] = ix
@@ -57,7 +48,7 @@ def create_app():
 	SESSION_COOKIE_HTTPONLY = True
 	#ensures that cookies are only transmitted over HTTPS connections
 	#change to True for production if using https, so cookies are sent over secure channels
-	SESSION_COOKIE_SECURE = False  # Since HTTPS might not be used in development
+	SESSION_COOKIE_SECURE = False
 
 	#list of base urls for validation in Mirador viewer and thumbnails
 	#more base urls can be added to the list in the config file, following pattern there
