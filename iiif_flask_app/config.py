@@ -8,7 +8,7 @@ class Config:
     BACKGROUND_IMAGE = "https://gallica.bnf.fr/iiif/ark:/12148/btv1b8415234c/f14/467,857,2418,1397/full/0/default.jpg"
     #home page introduction image
     #use image api from sequences in manifest, followed by "/55,111,2844,3035/full/0/default.jpg" for correct sizing
-    INTRO_IMAGE = "https://gallica.bnf.fr/iiif/ark:/12148/btv1b8415234c/f17/55,111,2844,3035/full/0/default.jpg"
+    INTRO_IMAGE = "https://gallica.bnf.fr/iiif/ark:/12148/btv1b8415234c/f17/55,111,2844,3035/500/0/default.jpg"
     #home page main title takes list of strings
     MAIN_TITLE = ["Main title here"]
     #caption text takes list of strings
