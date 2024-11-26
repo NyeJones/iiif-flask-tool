@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import logging
 from whoosh.index import create_in, open_dir
 from whoosh.fields import Schema, TEXT
 from whoosh.analysis import StandardAnalyzer, CharsetFilter
@@ -9,9 +10,12 @@ from whoosh.support.charset import accent_map
 from config import Config
 from iiif_app.utils import safe_json_get, extract_html_text, json_value_extract_clean, get_metadata_value
 
-
 #ensure file is run from correct directory in editor
 os.chdir(os.path.dirname(__file__))
+
+#configure logger for this module
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 def initialize_import_index(index_dir='index', files_directory='iiif_app/files'):
     """
@@ -62,9 +66,9 @@ def initialize_import_index(index_dir='index', files_directory='iiif_app/files')
                     with open(file_path, 'r', encoding='utf-8') as json_file:
                         json_data = json.load(json_file)
                         all_json_data.append(json_data)
-                #if there is an error print filename to console
+                #if there is an error print filename and error to console
                 except json.JSONDecodeError as e:
-                    print(f"Error decoding JSON in file {file_path}: {e}")
+                    logger.error(f"Error decoding JSON in file {file_path}: {e}")
 
     #index the file paths in the 'files' directory
     #use asyncwriter imported above to avoid concurrency locks on writing to index
