@@ -223,30 +223,37 @@ def get_metadata_value(metadata, label_pattern):
 def safe_json_get(json_object, key, index=None, default=None):
     """
     Safely extract values from a JSON-like dictionary, returning a default value in case of errors.
+    A 'TypeError' will be raised internally if 'index' is provided but the value is not a list.
+    Unexpected errors are logged for debugging purposes, but key errors are not logged.
     
     Parameters:
     - json_object: The JSON-like dictionary.
-    - key: The key string to extract from the dictionary.
+    - key: The key string to look for in the dictionary.
     - index: Index number to access list elements (if applicable).
     - default: The default value to return if the key is not found or an error occurs.
 
     Returns:
-    - The item at the specified index from the list if `index` is provided.
-    - The value associated with the key if `index` is not provided.
-    - The `default` value if the key is not found or an error occurs.
+    - The item at the specified index from the list if 'index' is provided.
+    - The value associated with the key if 'index' is not provided.
+    - The 'default' value if the key is not found or an error occurs.
     """
     try:
-        #safely get the value associated with the key
+        #get the value associated with the key
         value = json_object[key]
-        #safely access the index if it's a list
+        #access the index if it's a list
         if index is not None:
             if isinstance(value, list):
                 return value[index]
+            #raise type error if value not a list
             else:
                 raise TypeError(f"Expected a list for key '{key}', got {type(value)}")
         return value
+    except KeyError:
+        #do not log key errors as they are expected
+        return default
     except Exception as e:
-        logger.error(f"Error in safe_json_get: {e}", exc_info=True)
+    #log unexpected exceptions at the error level
+        logger.error(f"Unexpected error in safe_json_get: {e}", exc_info=True)
         return default
 
 def json_value_extract_clean(json_value):
