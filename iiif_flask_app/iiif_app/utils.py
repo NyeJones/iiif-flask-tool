@@ -17,6 +17,10 @@ os.chdir(os.path.dirname(__file__))
 #filter to ignore unnecessary Beautiful Soup warning
 warnings.filterwarnings('ignore', category=MarkupResemblesLocatorWarning)
 
+#configure logger for this module
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
 def remove_punctuation(s):
     """
     Removes punctuation characters from a string and replaces them with spaces.
@@ -26,8 +30,12 @@ def remove_punctuation(s):
 
     Returns:
     str: The input string with punctuation characters replaced by spaces.
-    """
 
+    Raises:
+    ValueError: If the input is not a string.
+    """
+    if not isinstance(s, str):
+        raise ValueError(f"Expected string, got {type(s)}")
     translation_table = str.maketrans(string.punctuation, ' ' * len(string.punctuation))
     return s.translate(translation_table)
 
@@ -41,8 +49,12 @@ def clean_text(text):
 
     Returns:
     str: The cleaned text.
+
+    Raises:
+    ValueError: If the input is not a string.
     """
-    
+    if not isinstance(text, str):
+        raise ValueError(f"Expected string for text, got {type(text)}")
     text = text.replace('\n', ' ').replace('\r', '')
     text = re.sub("ʼ", "'", text)
     text = re.sub(' +', ' ', text)
@@ -84,7 +96,7 @@ def extract_html_text(value):
     - value (str, list, or dict): The content to extract text from.
 
     Returns:
-    - list: Extracted text content from HTML as a list of strings.
+    - list: Extracted text content from HTML as a list of strings, empty list if error occurs.
 
     Notes:
     This function takes HTML content as input and uses nh3, string cleaning and Beautiful Soup to sanitise and extract the text content.
@@ -115,15 +127,18 @@ def extract_html_text(value):
                 cleaned_text_list.append(text)
         return cleaned_text_list
     except Exception as e:
-        #log any errors for debugging purposes
-        logging.error(f'Error in extract_html_text: {e}', exc_info=True)
-        return None
+        #log the main error for the function with the input value
+        logger.error(f'Error in extract_html_text for value: {value} ({type(value)}). Error: {e}', exc_info=True)
+        return []
 
 def custom_get(param='', default_value='*'):
     """
     Get a parameter value from request.args, sanitize the value,
     and ensure it's a non-empty string. If parameter is None or fails validation,
-    return the default value of an asterisk (wildcard).
+    return the default value of an asterisk (wildcard). 
+
+    In case of validation failure, raise a `ValueError`, log the error, 
+    and return the default value.
 
     Parameters:
     - param: the parameter to retrieve.
@@ -131,7 +146,6 @@ def custom_get(param='', default_value='*'):
 
     Returns:
     - str: The sanitized value of the parameter or the default value.
-    - Error message if exception occurs
     """
     try:
         response = request.args.get(param)
@@ -139,14 +153,13 @@ def custom_get(param='', default_value='*'):
         if isinstance(response, str) and response.strip():
             clean_response = nh3.clean(response)
             return clean_response
-        elif response is None:
+        elif response is None or response == "":
             return default_value
         else:
-            raise ValueError('Response for custom_get invalid, must be either non-empty string or None')
+            raise ValueError(f"Invalid value for '{param}': must be a non-empty string or None.")
     except Exception as e:
-        # Log the error for debugging purposes
-        logging.error(f'Error in custom_get: {e}', exc_info=True)
-        return None
+        logger.error(f"Error in custom_get for parameter '{param}': {e}", exc_info=True)
+        return default_value
 
 def custom_get_int(param):
     """
@@ -165,75 +178,76 @@ def custom_get_int(param):
         if isinstance(response, int):
             return response
         else:
-            raise ValueError('Response for custom_get_int invalid,  must be integer')
+            raise ValueError(f"Response for {param} must be an integer")
     except Exception as e:
-        # Log the error for debugging purposes
-        logging.error(f'Error in custom_get: {e}', exc_info=True)
+        logger.error(f"Error in custom_get_int for parameter '{param}': {e}", exc_info=True)
         return None
 
 
 def get_metadata_value(metadata, label_pattern):
     """
-    Get values from metadata where the label matches a regex pattern.
-    This can be used to extract specific metadata like 'language', 'date', etc.
+    Get values from metadata list where the label matches a regex pattern.
+    This can be used to extract specific metadata values like 'language', 'date', etc.
 
-    Each item in the metadata should be a dictionary with keys 'label' and 'value'.
-    The function checks if the 'label' matches the provided regex pattern, and if it does,
-    the corresponding 'value' is added to the result list.
+    Each item in the metadata list must be a dictionary with non-empty 'label' and 'value' keys. 
+    Items without these keys or with empty values will be skipped.
+    If this is true then check whether the 'label' value matches the provided regex pattern. 
+    If it does the corresponding 'value' value is added to the result list.
 
     Parameters:
     - metadata (list): A list of dictionaries containing metadata entries. Each dictionary
-      needs a 'label' and 'value' key to be considered.
-    - label_pattern (str): The regex pattern to match against the 'label' field.
+      needs a 'label' key and 'value' key to be considered.
+    - label_pattern (str): The regex pattern to match against the 'label' value.
 
     Returns:
-    - list: A list of values corresponding to matched label patterns. If no match is found,
+    - list: A list of values corresponding to matched patterns. If no match is found,
       or if any exception occurs, it returns ['N/A'].
     """
     try:
+        if not isinstance(metadata, list):
+            raise ValueError("Metadata must be a list of dictionaries.")
         metadata_vals = []
         for item in metadata:
-            if item.get('label') and item.get('value'):
+            #check item is dictionary then for 'label' and 'value' keys
+            if isinstance(item, dict) and item.get('label') and item.get('value'):
+                #check 'label' value against regex
                 label_str = str(item['label'])
+                #if there is a match return the value of 'value' key
                 if re.search(label_pattern, label_str, re.IGNORECASE):
                         metadata_vals.append(item['value'])
-        if not metadata_vals:
-            return ['N/A']
-        else:
-            return metadata_vals
+        return metadata_vals if metadata_vals else ['N/A']
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"Error in get_metadata_value: {e}", exc_info=True)
         return ['N/A']
 
 def safe_json_get(json_object, key, index=None, default=None):
     """
-    Safely extract values from JSON object, return None if error in extraction.
-
+    Safely extract values from a JSON-like dictionary, returning a default value in case of errors.
+    
     Parameters:
-    - json_object (dict): The JSON object.
-    - key (str): The key to extract from the JSON object.
-    - index (int, optional): index to access list elements (if applicable).
-    - default: default value to return if key is not found.
+    - json_object: The JSON-like dictionary.
+    - key: The key string to extract from the dictionary.
+    - index: Index number to access list elements (if applicable).
+    - default: The default value to return if the key is not found or an error occurs.
 
     Returns:
-    - item at index number from list if that is JSON key value.
-    - item if no index number specified.
-    - default of None and logged if error in extracting JSON
+    - The item at the specified index from the list if `index` is provided.
+    - The value associated with the key if `index` is not provided.
+    - The `default` value if the key is not found or an error occurs.
     """
-    if index is not None:
-        try:
-            return json_object.get(key)[index]
-        except Exception as e:
-            # Log the error for debugging purposes
-            logging.error(f'Error in safe_json_get: {e}', exc_info=True)
-            return default
-    else:
-        try:
-            return json_object.get(key)
-        except Exception as e:
-            # Log the error for debugging purposes
-            logging.error(f'Error in safe_json_get: {e}', exc_info=True)
-            return default
+    try:
+        #safely get the value associated with the key
+        value = json_object[key]
+        #safely access the index if it's a list
+        if index is not None:
+            if isinstance(value, list):
+                return value[index]
+            else:
+                raise TypeError(f"Expected a list for key '{key}', got {type(value)}")
+        return value
+    except Exception as e:
+        logger.error(f"Error in safe_json_get: {e}", exc_info=True)
+        return default
 
 def json_value_extract_clean(json_value):
     """
@@ -250,7 +264,7 @@ def json_value_extract_clean(json_value):
       to extract and clean.
 
     Returns:
-    - list: A list of cleaned text values extracted from the JSON, or ['N/A'] if the content 
+    - list: A list of cleaned text values extracted from the JSON value, or ['N/A'] if the content 
             is invalid, empty, or cannot be processed.
     """
     #if the json_value is None, return ['N/A'] as a fallback
@@ -277,13 +291,13 @@ def sidebar_counts(results, query_params, index_lists, json_key, item_key):
     results, sanitizes the item names (removing punctuation and handling case 
     variations), and generates a clean URL for each item. The links are sorted by 
     the item count in descending order and alphabetically by item name in case 
-    of ties in count.
+    of ties in count. Input validation for parameters occurs at beginning of function.
 
     Parameters:
     - results (list): List of dictionaries for content of each result.
     - json_key (str): JSON key to extract sidebar type from each result, e.g. 'json_repository'.
     - index_lists (dict): A dictionary containing lists of items for each index category, accessed via item_key.
-    - item_key (str): Key to identify items in the sidebar, e.g. 'repository'.
+    - item_key (str): Key to identify items in the sidebar and index_lists, e.g. 'repository'.
     - query_params (dict): Dictionary of query parameters from previous results.
 
     Returns:
@@ -293,40 +307,54 @@ def sidebar_counts(results, query_params, index_lists, json_key, item_key):
         - `count`: The number of results matching the item.
     """
     
-    #validate input parameter data types
+    #validate input parameter data
     if not isinstance(results, list):
         raise ValueError('Results must be a list of dictionaries')
+    if not all(isinstance(result, dict) for result in results):
+        raise ValueError("All items in Results must be dictionaries")
     if not isinstance(index_lists, dict):
-        raise ValueError('Index lists must be a list')
+        raise ValueError('Index lists must be a dictionary')
+    if not isinstance(item_key, str):
+        raise ValueError('item_key for sidebar section must be a string')
+    if item_key not in index_lists:
+        raise KeyError(f"item_key for sidebar section '{item_key}' does not exist in index_lists")
     if not isinstance(query_params, dict):
         raise ValueError('Query parameters must be provided as a dictionary')
     if not isinstance(json_key, str):
-        raise ValueError('json_key must be a string')
-    if not isinstance(item_key, str):
-        raise ValueError('item_key must be a string')
+        raise ValueError('json_key for result extraction must be a string')
+    if not all(json_key in result for result in results):
+        raise KeyError(f"Key '{json_key}' is missing in one or more results")
 
     #access correct index list for specific sidebar section
     #contains all valid categories for that sidebar section
     index_list = index_lists[item_key]
+    #validate index list data type
+    if not isinstance(index_list, (set, list)):
+        raise ValueError('Index list must be a set or a list')
 
-    #this section removes duplicates from the index list
+    #the below section removes duplicates from the index list
     #includes removing duplicate items in different order: e.g. 'Fes, Morocco' and 'Morocco, Fes'
-    items_done = []
+    #create set to check for duplicates and list for deduplicated index
+    unique_index_sets = set()
     unique_index_list = []
+
+    #loop through index of items for the sidebar section being created
     for ind_item in index_list:
-        # Normalize with unidecode, including diacritical marks, and remove punctuation for comparison purposes
+        #validate index item data type
+        if not isinstance(ind_item, str):
+            raise ValueError('Sidebar item must be a string')
+        # Normalize with unidecode, including removal of diacritical marks and punctuation for comparison purposes
         normalized_item = unidecode(ind_item)
-        item_set = set(remove_punctuation(normalized_item).split())
-        #if item set already found in items done don't include
-        if item_set in items_done:
-            continue
-        #if item set not found in items done, add item to unique index list
-        #and also items done list
-        else:
+        #create item set and convert to tuple for item to see if already done
+        item_set = tuple(set(remove_punctuation(normalized_item).split()))
+        #if item set not found in item sets, add to item sets
+        #also add original index item to deduplicated index list
+        if item_set not in unique_index_sets:
+            unique_index_sets.add(item_set)
             unique_index_list.append(ind_item)
-            items_done.append(item_set)
+
             
-    #this section creates a list of index item links
+    #the below section creates a list of index item links
     item_links = []
     #iterate through each index item and the results for relevant sidebar section
     #count occurrences of index item in results
@@ -346,17 +374,24 @@ def sidebar_counts(results, query_params, index_lists, json_key, item_key):
         #iterate through results and extract relevant content
         for result in results:
             res_item = result.get(json_key)
+            #validate index item data type
+            if not isinstance(res_item, str):
+                raise ValueError('Result item must be a string')
             #remove question marks and dashes and normalize with unidecode for purpose of comparison
             res_item = res_item.replace('?', '').replace('-', ' ')
             res_item = unidecode(res_item)
-            #check index item words against results words, if all the same add 1 to index item count
+            #check index item words against result words, if all index item words in result add 1 to index item count
             #this takes into account instances like 'Fes, Morocco' and 'Morocco, Fes'
             #where same item has different order
             if all(word in remove_punctuation(res_item).split() for word in remove_punctuation(param_item).split()):
                 item_count += 1
-
+        
         #create link for index item using updated query string
-        link = url_for('results', **query_params_copy)
+        #validate construction of url and raise exception if fails
+        try:
+            link = url_for('results', **query_params_copy)
+        except Exception as e:
+            raise ValueError(f"Failed to generate URL for query params: {query_params_copy}, error: {e}")
         #sanitize link and reformat ampersand
         clean_link = nh3.clean(link)
         clean_link = link.replace('&amp;', '&')
@@ -371,7 +406,7 @@ def sidebar_counts(results, query_params, index_lists, json_key, item_key):
                 'count': item_count
             })
         
-    #sort by count and alphabetically by item text if counts match
+    #sort item links by count and alphabetically by item text if counts match
     sorted_item_links = sorted(item_links, key=lambda x: (-x['count'], x[item_key].lower()))
     #return all links for the sidebar section
     return sorted_item_links
