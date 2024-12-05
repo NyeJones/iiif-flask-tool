@@ -274,10 +274,19 @@ def viewer():
     Returns:
     - Rendered template containing a Mirador IIIF viewer for manifest.
     - Done for each displayed link in results/index.
+    - If the manifest URL is invalid or missing, renders an error template with a message.
     """
     
     manifest_url = request.args.get('manifest')
     #use function to sanitise url with nh3 library
     manifest_url = extract_html_text(manifest_url)
+
+    if not manifest_url:
+        #return invalid query template if invalid or blank
+        invalid_msg = 'An error occurred while processing the manifest URL for viewer.'
+        return render_template('invalid-query.html', invalid_msg=invalid_msg, lang=g.lang,  
+            language_config=g.language_config, general_config=g.general_config)
+
     #return viewer template for IIIF url
-    return render_template('viewer.html', manifest_url=manifest_url)
+    return render_template('viewer.html', manifest_url=manifest_url, 
+        lang=g.lang,  language_config=g.language_config, general_config=g.general_config)
