@@ -167,7 +167,7 @@
                                     <!-- thumbnail sanitised using nh3 and csp-->
                                     <div class="thumbnail-container">
                                         <a href="viewer.html?manifest={{ result['iiif_path'] }}" target="_blank">
-                                            <img src="{{ result['json_thumbnail'] }}" class="img-fluid" alt="Thumbnail">
+                                            <img src="{{ result['json_thumbnail'] }}" class="img-fluid" alt="Thumbnail" loading="lazy">
                                         </a>
                                     </div>
                                     <!-- check if each item of metadata is not 'N/A and, if so, show the item-->
