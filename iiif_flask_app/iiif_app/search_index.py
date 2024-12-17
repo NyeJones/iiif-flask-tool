@@ -79,13 +79,20 @@ def initialize_import_index(index_dir='index', files_directory='iiif_app/files')
                         json_record = json.load(json_file)
                         #get iiif id from record
                         json_id_val = safe_json_get(json_record, '@id')
+
+                        #if json id not found, log accordingly and continue to next file
+                        if not json_id_val:
+                            logger.warning(f"Missing record ID, skipping file: {file_path}")
+                            continue
+
                         #use function to sanitise data with nh3 library and extract as string
                         json_id = extract_html_text(json_id_val)[0]
 
-                        #if json_id in seen ids or none found, log accordingly and continue to next file
-                        if not json_id or json_id in seen_ids:
-                            logger.warning(f"Duplicate or missing record ID, skipping file: {file_path}")
+                        #if json_id in seen ids log accordingly and continue to next file
+                        if json_id in seen_ids:
+                            logger.warning(f"Duplicate file, skipping file: {file_path}")
                             continue
+
                         #if json_id ok add to seen ids and move on to data extraction
                         seen_ids.add(json_id)
 
@@ -160,35 +167,37 @@ def initialize_import_index(index_dir='index', files_directory='iiif_app/files')
 
                         #use Beautiful Soup function to extract thumbnail image id
                         #images are well nested so need a few uses of function, return None if no image id
-                        first_sequence = safe_json_get(json_record, 'sequences', index=0)
-                        first_canvas = safe_json_get(first_sequence, 'canvases', index=0)
-                        first_image = safe_json_get(first_canvas, 'images', index=0)
-                        resource = safe_json_get(first_image, 'resource')
-                        service = safe_json_get(resource, 'service')
+                        first_sequence = safe_json_get(json_record, 'sequences', index=0, logging=False)
+                        first_canvas = safe_json_get(first_sequence, 'canvases', index=0, logging=False)
+                        first_image = safe_json_get(first_canvas, 'images', index=0, logging=False)
+                        resource = safe_json_get(first_image, 'resource', logging=False)
+                        service = safe_json_get(resource, 'service', logging=False)
                         if service:
-                            iiif_image_url = safe_json_get(service, '@id')
+                            iiif_image_url = safe_json_get(service, '@id', logging=False)
                         else:
-                            iiif_image_url = safe_json_get(resource, '@id')        
-                        #perform data sanitisation on url and extract as string
-                        iiif_image_url = extract_html_text(iiif_image_url)[0]
-                        #if image url not found log accordingly
+                            iiif_image_url = safe_json_get(resource, '@id', logging=False)
+                        
+                        #if image url not found log accordingly and make json_thumbnail None
                         if not iiif_image_url:
                             logger.warning(f"No image URL found for record ID: {json_id}")
+                            json_thumbnail = None
+                        else:
+                            #perform data sanitisation on url and extract as string
+                            iiif_image_url = extract_html_text(iiif_image_url)[0]
+                            #suffix patterns to remove from image id if there
+                            suffix_remove_patterns = [r'/full/.*/0/.*jpg']
+                            #new suffix to add to the end of all thumbnail urls, to get correct size for thumbnail
+                            new_suffix = '/full/!200,200/0/default.jpg'
 
-                        #suffix patterns to remove from image id if there
-                        suffix_remove_patterns = [r'/full/.*/0/.*jpg']
-                        #new suffix to add to the end of all thumbnail urls, to get correct size for thumbnail
-                        new_suffix = '/full/!200,200/0/default.jpg'
+                            #initialize json_thumbnail with the default URL
+                            json_thumbnail = iiif_image_url + new_suffix
 
-                        #initialize json_thumbnail with the default URL
-                        json_thumbnail = iiif_image_url + new_suffix
-
-                        #loop through patterns and remove if there
-                        for pattern in suffix_remove_patterns:
-                            #if pattern present replace with new suffix in image url
-                            if re.search(pattern, iiif_image_url):
-                                json_thumbnail = re.sub(pattern, new_suffix, iiif_image_url)
-                                break
+                            #loop through patterns and remove if there
+                            for pattern in suffix_remove_patterns:
+                                #if pattern present replace with new suffix in image url
+                                if re.search(pattern, iiif_image_url):
+                                    json_thumbnail = re.sub(pattern, new_suffix, iiif_image_url)
+                                    break
 
                         #add data from the manifest to the Whoosh index to make it searchable in the site
                         writer.add_document(

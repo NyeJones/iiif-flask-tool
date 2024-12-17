@@ -163,13 +163,16 @@
                             <div class="row">
                                 <div class="col">
                                     <!-- thumbnail data here, showing thumbnail image and making it also link to the Mirador viewer page for the item -->
+                                    <!-- check if thumbnail is not None and, if so, show the item-->
                                     <!-- csp hashes used to allow for Mirador stylings -->
                                     <!-- thumbnail sanitised using nh3 and csp-->
+                                    {% if result['json_thumbnail'] %}
                                     <div class="thumbnail-container">
                                         <a href="viewer.html?manifest={{ result['iiif_path'] }}" target="_blank">
                                             <img src="{{ result['json_thumbnail'] }}" class="img-fluid" alt="Thumbnail" loading="lazy">
                                         </a>
                                     </div>
+                                    {% endif %}
                                     <!-- check if each item of metadata is not 'N/A and, if so, show the item-->
                                     <!-- result for author -->
                                     {% if result['json_author'] != 'N/A' %}

@@ -284,9 +284,7 @@ def viewer():
     if not manifest_url:
         #return invalid query template if invalid or blank
         invalid_msg = 'An error occurred while processing the manifest URL for viewer.'
-        return render_template('invalid-query.html', invalid_msg=invalid_msg, lang=g.lang,  
-            language_config=g.language_config, general_config=g.general_config)
+        return render_template('invalid-query.html', invalid_msg=invalid_msg)
 
     #return viewer template for IIIF url
-    return render_template('viewer.html', manifest_url=manifest_url, 
-        lang=g.lang,  language_config=g.language_config, general_config=g.general_config)
+    return render_template('viewer.html', manifest_url=manifest_url)

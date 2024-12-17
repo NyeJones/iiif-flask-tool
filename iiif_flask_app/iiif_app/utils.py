@@ -220,11 +220,11 @@ def get_metadata_value(metadata, label_pattern):
         logger.error(f"Error in get_metadata_value: {e}", exc_info=True)
         return ['N/A']
 
-def safe_json_get(json_object, key, index=None, default=None):
+def safe_json_get(json_object, key, index=None, default=None, logging=True):
     """
     Safely extract values from a JSON-like dictionary, returning a default value in case of errors.
     A 'TypeError' will be raised internally if 'index' is provided but the value is not a list.
-    Unexpected errors are logged for debugging purposes, but key errors are not logged.
+    Unexpected errors logged for debugging purposes if logging is True, but key errors are not logged.
     
     Parameters:
     - json_object: The JSON-like dictionary.
@@ -252,8 +252,9 @@ def safe_json_get(json_object, key, index=None, default=None):
         #do not log key errors as they are expected
         return default
     except Exception as e:
-    #log unexpected exceptions at the error level
-        logger.error(f"Unexpected error in safe_json_get: {e}", exc_info=True)
+        #log unexpected exceptions at the error level if logging is True
+        if logging:
+            logger.error(f"Unexpected error in safe_json_get: {e}", exc_info=True)
         return default
 
 def json_value_extract_clean(json_value):
