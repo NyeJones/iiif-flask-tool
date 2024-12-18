@@ -59,7 +59,8 @@ def create_app():
 	csp = {
 	    'default-src': ['\'self\'', 'https://maxcdn.bootstrapcdn.com', 'https://ajax.googleapis.com'],
 	    'connect-src': ['\'self\''],
-	    'img-src': ['\'self\''],
+	    'img-src': ['\'self\'', 'data:'],
+	    'media-src': ['\'self\''],
 	    'script-src': ['\'self\'', 'https://ajax.googleapis.com', 'https://maxcdn.bootstrapcdn.com', 'https://unpkg.com'],
 	    'style-src': ['\'self\'', 'https://maxcdn.bootstrapcdn.com', '\'unsafe-inline\''],
 	    'script-src-elem': ['\'self\'', 'https://unpkg.com', 'https://maxcdn.bootstrapcdn.com', 'https://ajax.googleapis.com', '\'unsafe-inline\''],
@@ -69,6 +70,7 @@ def create_app():
 	#add base urls for different repositories to csp for validation
 	csp['connect-src'].extend(base_urls)
 	csp['img-src'].extend(base_urls)
+	csp['media-src'].extend(base_urls)
 
 	#initialize Flask-Talisman with CSP configuration
 	#Talisman also includes HSTS, X-content type, x-frame and cookie settings for app security
