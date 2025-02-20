@@ -124,5 +124,7 @@ class Config:
         "dimu.org",
         "*.dimu.org",
         "manchester.ac.uk",
-        "*.manchester.ac.uk"
+        "*.manchester.ac.uk",
+        "github.io",
+        "*.github.io"
     ]
