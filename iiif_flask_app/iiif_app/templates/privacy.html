@@ -1,0 +1,18 @@
+{% extends "main.html" %}
+
+{% block base_content %}
+<!-- Privacy statement page content -->
+<div class="privacy-page container-fluid margin-top-60">
+	<div class="row">
+		<div class="col">
+			<h2>Privacy Statement</h2>
+			<!-- Loop through data imported from config file, add to page -->
+			<div class="privacy-text">
+				{% for item in privacy_data %}
+				<p>{{ item }}</p>
+				{% endfor %}
+			</div>
+		</div>
+	</div>
+</div>
+{% endblock %}

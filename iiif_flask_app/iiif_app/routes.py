@@ -26,6 +26,7 @@ long_intro = Config.LONG_INTRO
 about_data = Config.ABOUT
 proj_team_data = Config.PROJECT_TEAM
 ad_board_data = Config.ADVISORY_BOARD
+privacy_data = Config.PRIVACY
 
 #dictionary of footer names and urls
 footer_data = Config.FOOTER
@@ -66,6 +67,12 @@ def home():
 def about():
     """Render about page html template."""
     return render_template('about.html', about_data=about_data)
+
+@app.route('/privacy')
+@cache.cached(timeout=86400)
+def privacy():
+    """Render privacy page html template."""
+    return render_template('privacy.html', privacy_data=privacy_data)
 
 @app.route('/contact')
 @cache.cached(timeout=86400)

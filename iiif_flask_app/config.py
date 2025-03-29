@@ -24,6 +24,8 @@ class Config:
     REPOSITORIES = {'cudl': 'Cambridge University Library'}
     #about page text takes a list of strings
     ABOUT = ["About page text"]
+    #privacy statement text takes a list of strings
+    PRIVACY = ["We use cookies to improve our site’s functionality and ensure a smooth user experience. These cookies help maintain your session as you navigate between pages and enable essential website features. We do not use cookies for tracking, analytics, advertising, or marketing purposes. Your privacy is important to us, and we ensure all session cookies are transmitted securely over HTTPS", "If you prefer, you can disable cookies in your browser settings; however, this may affect the functionality of the website."]
     #project team text takes a list of strings
     PROJECT_TEAM = ["Person 1, email@cam.ac.uk", 'Person_2, email@gmail.com']
     #advisory board text takes a list of strings
