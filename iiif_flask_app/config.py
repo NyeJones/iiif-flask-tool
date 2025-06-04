@@ -41,7 +41,7 @@ class Config:
         }
     #base urls takes a list of strings, these are used for security purposes to say which sites are ok to link to
     #if you're including an iiif api you'll need to add the provider to the list if not already there
-    #as in this format: "lib.cam.ac.uk", "*.lib.cam.ac.uk" or "damsssl.llgc.org.uk", "*damsssl.llgc.org.uk"
+    #as in this format: "lib.cam.ac.uk", "*.lib.cam.ac.uk" or "damsssl.llgc.org.uk", "*.damsssl.llgc.org.uk"
     #2 entries for each provider, first entry covers subdomain of the institution
     #second entry covers anything else preceding the institution domain in the uri
     #so "lib.cam.ac.uk", "*.lib.cam.ac.uk" would cover "https://images.lib.cam.ac.uk" and "https://cudl.lib.cam.ac.uk"

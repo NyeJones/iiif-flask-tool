@@ -13,9 +13,10 @@ def iiif_validation(input_uris):
 	'''
     validated_data = []
     for uri in input_uris:
+        uri = uri.replace('http://', 'https://')
         print(f'Processing {uri}')
         if not uri.strip():  # Check if the uri is empty or blank
-            print("Empty uri, skipping...")
+            print("Empty uri or input row, skipping...")
             continue
         try:
             response = requests.get(uri)
@@ -41,16 +42,16 @@ def iiif_process_save(input_iiif_ls):
 	'''
 	for uri, item in input_iiif_ls:
 	    try:
-	        item_type = item.get('@type')
-	        if item_type == 'sc:Collection':
+	        item_type = item.get('@type') or item.get('type')
+	        if item_type == 'sc:Collection' or item_type == 'Collection':
 	            collection_uris = []
 	            for dic in item.get('manifests', []):
-	                coll_id = dic.get('@id')
+	                coll_id = dic.get('@id') or dic.get('id')
 	                if coll_id:
 	                    collection_uris.append(coll_id)
 	            validated_coll_data = iiif_validation(collection_uris)
 	            iiif_process_save(validated_coll_data)
-	        elif item_type == 'sc:Manifest':
+	        elif item_type == 'sc:Manifest' or item_type == 'Manifest':
 	            save_manifest(item)
 	        else:
 	            print(f'No "@type" found for item: {uri}. Not included in data')
@@ -64,7 +65,8 @@ def save_manifest(manifest):
 	Extracts identifier from uri in manifest using regex.
 	Uses identifier as part of file path for manifest.
 	Saves manifest to outputs directory as json.'''
-	uri = manifest['@id']
+	uri =  manifest.get('@id') or manifest.get('id')
+	uri = uri.replace('http://', 'https://')
 	identifier = re.search(r'https://(.+)', uri).group(1)
 	underscore_id = identifier.replace('/', '_')
 	if re.search(r'\.json$', underscore_id):

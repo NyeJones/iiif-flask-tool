@@ -78,7 +78,7 @@ def initialize_import_index(index_dir='index', files_directory='iiif_app/files')
                     with open(file_path, 'r', encoding='utf-8') as json_file:
                         json_record = json.load(json_file)
                         #get iiif id from record
-                        json_id_val = safe_json_get(json_record, '@id')
+                        json_id_val = safe_json_get(json_record, '@id') or safe_json_get(json_record, 'id')
 
                         #if json id not found, log accordingly and continue to next file
                         if not json_id_val:
@@ -173,9 +173,9 @@ def initialize_import_index(index_dir='index', files_directory='iiif_app/files')
                         resource = safe_json_get(first_image, 'resource', logging=False)
                         service = safe_json_get(resource, 'service', logging=False)
                         if service:
-                            iiif_image_url = safe_json_get(service, '@id', logging=False)
+                            iiif_image_url = safe_json_get(service, '@id', logging=False) or safe_json_get(service, 'id', logging=False) 
                         else:
-                            iiif_image_url = safe_json_get(resource, '@id', logging=False)
+                            iiif_image_url = safe_json_get(resource, '@id', logging=False) or safe_json_get(resource, 'id', logging=False)
                         
                         #if image url not found log accordingly and make json_thumbnail None
                         if not iiif_image_url:
