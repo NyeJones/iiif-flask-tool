@@ -568,14 +568,34 @@ footer .container-fluid {
     .intro-capt {
         text-align: left;
     }
+    
     .sidebar {
         max-width: 100%;
         min-width: 100%;
     }
+    
     .sidebar-full-text {
        left: 75%;
        top: 100%;
    }
+   
+   .navbar a {
+        padding: 7px 8px;
+    }
+    
+    .lang-switch-dropdown {
+        padding-right: 8px;
+    }
+   
+    .navbar .container-fluid ul:last-child {
+        margin-left: initial;
+        padding-left: 8px;
+    }
+    
+    .navbar .search-input {
+        width: 40%;
+    }
+    
 }
 
 /* Media query for screens wider than 1300px */
