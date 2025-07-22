@@ -546,8 +546,8 @@ footer .container-fluid {
     color: #f0f0f0;
 }
 
-/* Media query for smaller screens */
-/* For smaller screens make sections 100% width so they form rows in a single column */
+/* Media query for smaller screens to make content fit properly */
+
 @media only screen and (max-width: 620px) {
     .info-box {
         max-width: 100%;
@@ -598,7 +598,8 @@ footer .container-fluid {
     
 }
 
-/* Media query for screens wider than 1300px */
+/* Media query for screens wider than 1300px to make content fit properly*/
+
 @media screen and (min-width: 1300px) {
     .background-image {
         width: 1600px;
