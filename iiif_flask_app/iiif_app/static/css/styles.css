@@ -495,6 +495,7 @@ a:hover {
     padding-left: 5px;
     padding-right: 5px;
     transition: background-color 0.3s;
+    background-color: #f8f9fa;
 }
 
 .navbar .btn:hover {
@@ -575,5 +576,12 @@ footer .container-fluid {
        left: 75%;
        top: 100%;
    }
+}
+
+/* Media query for screens wider than 1300px */
+@media screen and (min-width: 1300px) {
+    .background-image {
+        width: 1600px;
+    }
 }
 
