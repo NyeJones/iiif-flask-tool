@@ -80,6 +80,16 @@ def contact():
     """Render contact page html template."""
     return render_template('contact.html', proj_team_data=proj_team_data, ad_board_data=ad_board_data)
 
+@app.route('/invalid-query')
+def invalid_query():
+    """Render invalid query html template."""
+    return render_template('invalid_query.html')
+
+@app.route('/invalid-manifest')
+def invalid_manifest():
+    """Render invalid manifest html template."""
+    return render_template('invalid_manifest.html')
+
 @app.route('/search', methods=['POST'])
 def search():
     """
@@ -113,10 +123,8 @@ def search():
             #return query to results route with url parameters extracted above
             return redirect(url_for('results', query=query, repository=repository, language=language, material=material, author=author))
 
-    
-    #return invalid query template if invalid or blank
-    invalid_msg = f'Invalid or blank query, please search again.'
-    return render_template('invalid-query.html', invalid_msg=invalid_msg)
+    #if form not valid return invalid query route
+    return redirect(url_for('invalid_query'))
 
 @app.route('/results')
 def results():
@@ -289,9 +297,8 @@ def viewer():
     manifest_url = extract_html_text(manifest_url)
 
     if not manifest_url:
-        #return invalid query template if invalid or blank
-        invalid_msg = 'An error occurred while processing the manifest URL for viewer.'
-        return render_template('invalid-query.html', invalid_msg=invalid_msg)
+        #if manifest url not valid return invalid manifest route
+        return redirect(url_for('invalid_manifest'))
 
     #return viewer template for IIIF url
     return render_template('viewer.html', manifest_url=manifest_url)

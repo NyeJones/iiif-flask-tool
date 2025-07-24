@@ -1,0 +1,14 @@
+<!-- extends main base containing navbar and footer, adds manifest invalid message -->
+{% extends "main.html" %}
+
+{% block base_content %}
+<!-- Invalid manifest page content -->
+<div class="invalid-page container-fluid margin-top-60">
+	<div class="row">
+		<div class="col">
+			<h2>Invalid IIIF manifest URL</h2>
+			<p><b>Invalid or blank manifest URL.</b></p>
+		</div>
+	</div>
+</div>
+{% endblock %}
