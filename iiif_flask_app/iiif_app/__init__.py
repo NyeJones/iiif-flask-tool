@@ -26,17 +26,16 @@ def create_app():
 	cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache'})
 	app.config['CACHE'] = cache
 
-	#directory paths for index and files
+	#directory paths for index, app directory and files	
 	index_directory = 'index'
+	app_directory = 'iiif_app'
 	files_directory = 'iiif_app/files'
 
-	#initialize the app index, index lists for sidebar and index data using imported function
-	ix, index_lists = initialize_import_index(index_dir=index_directory, files_directory=files_directory)
+	#initialize the app index using imported function
+	ix = initialize_import_index(index_dir=index_directory, app_directory=app_directory, files_directory=files_directory)
 
 	#add index to app
 	app.config['SEARCH_INDEX'] = ix
-	#add index lists for sidebar operations to app
-	app.config['INDEX_LISTS'] = index_lists
 
 	#create route to static folder for css and javascript files
 	app.static_folder = 'static'
@@ -64,7 +63,7 @@ def create_app():
 	    'script-src': ['\'self\'', 'https://ajax.googleapis.com', 'https://maxcdn.bootstrapcdn.com', 'https://unpkg.com'],
 	    'style-src': ['\'self\'', 'https://maxcdn.bootstrapcdn.com', '\'unsafe-inline\''],
 	    'script-src-elem': ['\'self\'', 'https://unpkg.com', 'https://maxcdn.bootstrapcdn.com', 'https://ajax.googleapis.com', '\'unsafe-inline\''],
-	    # Add more CSP directives as needed
+	    #add more CSP directives as needed
 	}
 
 	#add base urls for different repositories to csp for validation
@@ -82,8 +81,3 @@ def create_app():
 		import iiif_app.routes
 
 	return app
-
-
-
-
-

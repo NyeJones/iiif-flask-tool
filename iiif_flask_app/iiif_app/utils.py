@@ -5,11 +5,15 @@ import logging
 import warnings
 import string
 import nh3
+import hashlib
 from unidecode import unidecode
 from collections import defaultdict
 from natsort import natsorted
 from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
 from flask import request, url_for
+from whoosh.searching import Results, Searcher
+from whoosh.sorting import FieldFacet
+from whoosh.query import And, Term, Every
 
 
 #ensure file is run from correct directory in editor
@@ -20,6 +24,16 @@ warnings.filterwarnings('ignore', category=MarkupResemblesLocatorWarning)
 #configure logger for this module
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
+
+def make_cache_key_excluding_page():
+    """
+    Generates a consistent cache key for the search results route, excluding the 'page' parameter.
+    
+    Returns:
+    str: A unique cache key string based on the request's arguments (except 'page').
+    """
+    args = {k: v for k, v in request.args.items() if k != 'page'}
+    return 'results:' + hashlib.md5(json.dumps(args, sort_keys=True).encode()).hexdigest()
 
 def remove_punctuation(s):
     """
@@ -268,7 +282,7 @@ def json_value_extract_clean(json_value):
     and fully extracted list of strings.
 
     Parameters:
-    - json_value_ls (list): A list of JSON values (which can be strings, lists, or dictionaries) 
+    - json_value (list): A list of JSON values (which can be strings, lists, or dictionaries) 
       to extract and clean.
 
     Returns:
@@ -290,131 +304,140 @@ def json_value_extract_clean(json_value):
             #if the extraction returns no content, return ['N/A'] as a fallback
             return ['N/A']
 
-def sidebar_counts(results, query_params, index_lists, json_key, item_key):
+def sidebar_counts(query, searcher, query_params, json_key, item_key):
     """
-    Generates a sorted list of links for a sidebar section based on the provided input parameters.
+    Builds a sidebar section with links and counts based on a given facet of search results.
 
-    This function takes a list of results and generates links for each unique item 
-    in a specified index list. It counts how many times each item appears in the 
-    results, sanitizes the item names (removing punctuation and handling case 
-    variations), and generates a clean URL for each item. The links are sorted by 
-    the item count in descending order and alphabetically by item name in case 
-    of ties in count. Input validation for parameters occurs at beginning of function.
+    This function uses a Whoosh search query and searcher to group search results
+    by a specified JSON field (facet), counts and normalizes the field values, and 
+    generates search links that filter results by each unique value. It returns 
+    a sorted list of dictionaries suitable for rendering sidebar filter sections.
 
     Parameters:
-    - results (list): List of dictionaries for content of each result.
-    - json_key (str): JSON key to extract sidebar type from each result, e.g. 'json_repository'.
-    - index_lists (dict): A dictionary containing lists of items for each index category, accessed via item_key.
-    - item_key (str): Key to identify items in the sidebar and index_lists, e.g. 'repository'.
-    - query_params (dict): Dictionary of query parameters from previous results.
+    - query (whoosh.query.Query): A Whoosh query object (e.g. And, Every).
+    - searcher (whoosh.searching.Searcher): A Whoosh Searcher used to run the query.
+    - query_params (dict): Dictionary of existing query parameters for URL construction.
+    - json_key (str): The name of the field to facet/group by in search results (e.g. 'json_repository').
+    - item_key (str): The label for the item in the sidebar (e.g. 'repository', 'language').
 
     Returns:
-    list: A list of dictionaries containing the following keys for each item for each sidebar link:
-        - `item_key`: The item name.
-        - `search_link`: A URL to search for that item from within current results.
-        - `count`: The number of results matching the item.
+    list of dicts: Each dictionary represents a sidebar item and contains:
+        - item_key (str): the original item name (unsanitized).
+        - search_link (str): URL to search with this item as a filter.
+        - count (int): number of matching results for the item.
+
+    Raises error if validation checks not passed.
     """
     
     #validate input parameter data
-    if not isinstance(results, list):
-        raise ValueError('Results must be a list of dictionaries')
-    if not all(isinstance(result, dict) for result in results):
-        raise ValueError("All items in Results must be dictionaries")
-    if not isinstance(index_lists, dict):
-        raise ValueError('Index lists must be a dictionary')
     if not isinstance(item_key, str):
         raise ValueError('item_key for sidebar section must be a string')
-    if item_key not in index_lists:
-        raise KeyError(f"item_key for sidebar section '{item_key}' does not exist in index_lists")
     if not isinstance(query_params, dict):
-        raise ValueError('Query parameters must be provided as a dictionary')
+        raise TypeError('Query parameters must be provided as a dictionary')
     if not isinstance(json_key, str):
         raise ValueError('json_key for result extraction must be a string')
-    if not all(json_key in result for result in results):
-        raise KeyError(f"Key '{json_key}' is missing in one or more results")
+    if not isinstance(query, (And, Every)):
+        raise TypeError('Expected a Whoosh query object (And or Every) for "query"')
+    if not isinstance(searcher, Searcher):
+        raise TypeError('Expected a Whoosh Searcher object for "searcher"')
+    
+    #create a facet object using the field name (json_key)
+    facet = FieldFacet(json_key)
+    #execute search with faceting enabled (groupedby)
+    results = searcher.search(query, groupedby=facet)
+    #extract the grouped results
+    facet_groups = results.groups(json_key)
+    #validate that the grouping returned a dictionary
+    if not isinstance(facet_groups, dict):
+        raise ValueError(f"facet_groups for sidebar must be dictionary")
 
-    #access correct index list for specific sidebar section
-    #contains all valid categories for that sidebar section
-    index_list = index_lists[item_key]
-    #validate index list data type
-    if not isinstance(index_list, (set, list)):
-        raise ValueError('Index list must be a set or a list')
+    #create a new dictionary to hold facet keys after splitting multi-value entries
+    expanded_groups = {}
 
-    #the below section removes duplicates from the index list
-    #includes removing duplicate items in different order: e.g. 'Fes, Morocco' and 'Morocco, Fes'
-    #create set to check for duplicates and list for deduplicated index
-    unique_index_sets = set()
-    unique_index_list = []
+    #iterate over each facet key and its list of matching doc_ids
+    for raw_key, doc_ids in facet_groups.items():
+        #if the facet key is a string containing a '|' separator,
+        #it represents multiple values in one field
+        if isinstance(raw_key, str) and '|' in raw_key:
+            #split into individual parts, trimming whitespace around each part
+            parts = [part.strip() for part in raw_key.split('|')]
+            #for each separate value, add the same doc_ids to that value's group
+            for part in parts:
+                expanded_groups.setdefault(part, []).extend(doc_ids)
+        else:
+            #for keys without '|', just add them directly to the expanded dictionary
+            expanded_groups.setdefault(raw_key, []).extend(doc_ids)
 
-    #loop through index of items for the sidebar section being created
-    for ind_item in index_list:
-        #validate index item data type
-        if not isinstance(ind_item, str):
-            raise ValueError('Sidebar item must be a string')
-        # Normalize with unidecode, including removal of diacritical marks and punctuation for comparison purposes
-        normalized_item = unidecode(ind_item)
-        #create item set and convert to tuple for item to see if already done
-        item_set = tuple(set(remove_punctuation(normalized_item).split()))
-        #if item set not found in item sets, add to item sets
-        #also add original index item to deduplicated index list
-        if item_set not in unique_index_sets:
-            unique_index_sets.add(item_set)
-            unique_index_list.append(ind_item)
+    #replace the original facet_groups with the expanded version
+    facet_groups = expanded_groups
 
-            
-    #the below section creates a list of index item links
-    item_links = []
-    #iterate through each index item and the results for relevant sidebar section
-    #count occurrences of index item in results
-    for ind_item in unique_index_list:
-        #establish count for item
-        item_count = 0
-        #remove question marks and dashes and normalize with unidecode for purpose of comparison
-        ind_item = ind_item.replace('?', '')
-        param_item = ind_item.replace('-', ' ')
-        param_item = unidecode(param_item)
-        #copy query string and make a new query string with index item
-        #under key for relevant sidebar section
-        query_params_copy = query_params.copy()
-        query_params_copy[item_key] = ind_item
-        
-        #count occurrence of index item in all results for relevant section
-        #iterate through results and extract relevant content
-        for result in results:
-            res_item = result.get(json_key)
-            #validate index item data type
-            if not isinstance(res_item, str):
-                raise ValueError('Result item must be a string')
-            #remove question marks and dashes and normalize with unidecode for purpose of comparison
-            res_item = res_item.replace('?', '').replace('-', ' ')
-            res_item = unidecode(res_item)
-            #check index item words against result words, if all index item words in result add 1 to index item count
-            #this takes into account instances like 'Fes, Morocco' and 'Morocco, Fes'
-            #where same item has different order
-            if all(word in remove_punctuation(res_item).split() for word in remove_punctuation(param_item).split()):
-                item_count += 1
-        
-        #create link for index item using updated query string
-        #validate construction of url and raise exception if fails
+    #normalize and count items (case and punctuation insensitive)
+    #e.g. "repository-A", "repository a" will be treated as the same
+    merged_keys = {}
+    #extract raw keys which are the unprocessed items from each category
+    #and doc_ids which are the matching documents for that key
+    for raw_key, doc_ids in facet_groups.items():
+        #skip non-string keys – some fields might be missing or malformed
+        if not isinstance(raw_key, str):
+            continue
+        #normalise the key to make lower case and remove punctuation
+        norm_key = unidecode(remove_punctuation(raw_key)).lower()
+        #if normalized key already exists in merged_keys, 
+        #increment its count by length of doc ids
+        if norm_key in merged_keys:
+            merged_keys[norm_key][0] += len(doc_ids)
+        #if normalized key doesn't exist, store count and original raw label as tuple
+        else:
+            merged_keys[norm_key] = [len(doc_ids), raw_key]
+
+    #create a rolled count dictionary for finding subsets
+    #e.g. "Arabic" will contain the count for "Judaeo-Arabic", 
+    #which will also be counted as a separate category
+    rolled_counts = {}
+    for norm_key in merged_keys:
+        #convert each normalized key into a set of words
+        norm_set = set(norm_key.split())
+        #start with the count from this key
+        base_count = merged_keys[norm_key][0]
+        #compare against every other key in the list
+        for other_key in merged_keys:
+            if norm_key == other_key:
+                continue
+            other_set = set(other_key.split())
+            #if all words in this key are contained in another, consider it a subset
+            if norm_set.issubset(other_set):
+                #add count for subset key to base count
+                base_count += merged_keys[other_key][0]
+        #use the original (raw) key for display purposes in the sidebar
+        raw_key = merged_keys[norm_key][1]
+        rolled_counts[raw_key] = base_count
+
+
+    #build sidebar list: one dictionary per item with name, link, and count
+    sidebar = []
+    for item, count in rolled_counts.items():
+        #skip items with no results
+        if count < 1:
+            continue
+        #create a copy of current query parameters and update with the current item
+        query_copy = query_params.copy()
+        query_copy[item_key] = item
         try:
-            link = url_for('results', **query_params_copy)
+            #generate a new URL for the results page filtered by this item
+            link = url_for('results', **query_copy)
         except Exception as e:
-            raise ValueError(f"Failed to generate URL for query params: {query_params_copy}, error: {e}")
-        #sanitize link and reformat ampersand
+            #raise error if url generation fails
+            raise ValueError(f"Failed to generate URL for query params: {query_copy}, error: {e}")
+        #sanitize link and correct HTML encoding
         clean_link = nh3.clean(link)
         clean_link = link.replace('&amp;', '&')
-        
-        #if item count is above zero add dictionary for item to item links list
-        #this will be used for that index item within relevant sidebar section
-        #includes link for updated query, count and item text
-        if item_count > 0:
-            item_links.append({
-                item_key: ind_item,
-                'search_link': clean_link,
-                'count': item_count
-            })
-        
-    #sort item links by count and alphabetically by item text if counts match
-    sorted_item_links = sorted(item_links, key=lambda x: (-x['count'], x[item_key].lower()))
-    #return all links for the sidebar section
-    return sorted_item_links
+        #append the item to the sidebar with its name, link, and result count
+        sidebar.append({
+            item_key: item,
+            'search_link': clean_link,
+            'count': count
+        })
+
+    #sort sidebar items by descending count, then alphabetically
+    sidebar.sort(key=lambda x: (-x['count'], x[item_key].lower()))   
+    return sidebar

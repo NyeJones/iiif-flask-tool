@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.INFO)
 #path to the file that stores the timestamp of the last successful index update
 INDEX_TIMESTAMP_PATH = 'index/.last_indexed'
 
-def needs_reindex(files_directory):
+def needs_reindex(app_directory):
     """
     Determines whether the search index needs to be updated based on file modification times.
 
@@ -41,7 +41,7 @@ def needs_reindex(files_directory):
 
     last_index_time = float(open(INDEX_TIMESTAMP_PATH).read().strip())
 
-    for root, _, files in os.walk(files_directory):
+    for root, _, files in os.walk(app_directory):
         #check for directory-level changes
         if os.path.getmtime(root) > last_index_time:
             return True
@@ -65,20 +65,20 @@ def update_index_timestamp():
     with open(INDEX_TIMESTAMP_PATH, 'w') as f:
         f.write(str(time.time()))
 
-def initialize_import_index(index_dir='index', files_directory='iiif_app/files'):
+def initialize_import_index(index_dir='index', app_directory='iiif_app', files_directory='iiif_app/files'):
     """
-    Checks if reindexing is necessary by checking file modification times.
-    If reindexing is not needed, loads the existing index and sidebar filter data.
+    Checks if reindexing is necessary by checking file and directory modification times.
+    If reindexing is not needed, loads the existing index.
     If reindexing is needed creates new Whoosh index, processes JSON files, 
     and populates the index with documents.
 
     Parameters:
     - index_dir: Directory where the Whoosh index is created or opened.
+    - app_directory: Directory from which to check for reindexing.
     - files_directory: Directory containing the iiif JSON files to be indexed.
 
     Returns:
     - ix: The Whoosh index object.
-    - index_lists: A dictionary of sets for creating sidebar filters in the app.
     """
 
     #initialise analyzer for Whoosh search engine, essentially a tokenizer with filters.
@@ -102,26 +102,15 @@ def initialize_import_index(index_dir='index', files_directory='iiif_app/files')
     #create index directory if not present
     if not os.path.exists(index_dir):
         os.mkdir(index_dir)
-
-    #create path for index sidebar list storage
-    index_lists_path = os.path.join(index_dir, 'index_lists.json')
     
-    #check if index and index lists for sidebar need to be updated or created
-    #if not required load them
-    if not needs_reindex(files_directory):
-        #load index from file
+    #check if index needs to be updated or created 
+    #if not required load from file
+    if not needs_reindex(app_directory):
         ix = open_dir(index_dir)
-        #load index lists dictionary from json file
-        with open(index_lists_path, 'r', encoding='utf-8') as f:
-            index_lists = {k: set(v) for k, v in json.load(f).items()}
-        #return index and index lists for sidebar
-        return ix, index_lists
-    #otherwise index and index lists are not present, create them
+        return ix
+    #otherwise index is not present, create new one
     else:
         ix = create_in(index_dir, schema)
-
-        #create index sets for use in sidebar
-        index_lists = {'repository': set(), 'language': set(), 'material': set(), 'author': set()}
 
         #initialize writer to write data to index
         #use asyncwriter imported above to avoid concurrency locks on writing to index
@@ -166,17 +155,16 @@ def initialize_import_index(index_dir='index', files_directory='iiif_app/files')
                             #use functions to extract and prepare relevant data using key
                             #sanitise and clean data for key value, return 'N/A' if None
                             #extract all matching values as list
-                            #convert list into string for each key, joined with '|' where more than one value
-                            #finish with a list of values and a joined list of values for each category
-                            #these are used for sidebar and whoosh index respectively
+                            #convert list into string of unique values for each key, 
+                            #joined with '|' where more than one value
 
                             json_label_val = safe_json_get(json_record, 'label')
                             json_label_ls = json_value_extract_clean(json_label_val)
-                            json_label = ' | '.join(json_label_ls)
+                            json_label = ' | '.join(sorted(set(json_label_ls)))
                             
                             json_description_val = safe_json_get(json_record, 'description')
                             json_description_ls = json_value_extract_clean(json_description_val)
-                            json_description = ' | '.join(json_description_ls)
+                            json_description = ' | '.join(sorted(set(json_description_ls)))
 
                             #create default value of ['N/A'] for additional metadata categories
                             json_date_ls = ['N/A']
@@ -196,28 +184,24 @@ def initialize_import_index(index_dir='index', files_directory='iiif_app/files')
                                 #we also use our json_value_extract_clean to sanitise, fully extract and clean json values
 
                                 #extract all matching values as list
-                                #convert list into string for each category, joined with '|' where more than one value
-                                #finish with a list of values and a joined list of values for each category
-                                #these are used for sidebar and whoosh index respectively
+                                #convert list into string of unique values for each key, 
+                                #joined with '|' where more than one value
 
                                 json_date_ls = get_metadata_value(metadata, r'date')
                                 json_date_ls = json_value_extract_clean(json_date_ls)
-                                json_date = ' | '.join(json_date_ls)
+                                json_date = ' | '.join(sorted(set(json_date_ls)))
 
                                 json_language_ls = get_metadata_value(metadata, r'^(text language|language)\S*$')
                                 json_language_ls = json_value_extract_clean(json_language_ls)
-                                index_lists['language'].update(json_language_ls)
-                                json_language = ' | '.join(json_language_ls)
-
+                                json_language = ' | '.join(sorted(set(json_language_ls)))
+                                
                                 json_material_ls = get_metadata_value(metadata, r'material')
                                 json_material_ls = json_value_extract_clean(json_material_ls)
-                                index_lists['material'].update(json_material_ls)
-                                json_material = ' | '.join(json_material_ls)
+                                json_material = ' | '.join(sorted(set(json_material_ls)))
 
                                 json_author_ls = get_metadata_value(metadata, r'^(author|creator)\S*$')
                                 json_author_ls = json_value_extract_clean(json_author_ls)
-                                index_lists['author'].update(json_author_ls)
-                                json_author = ' | '.join(json_author_ls)
+                                json_author = ' | '.join(sorted(set(json_author_ls)))
 
                             #create default value of 'N/A' for repository
                             json_repository = 'N/A'
@@ -229,7 +213,6 @@ def initialize_import_index(index_dir='index', files_directory='iiif_app/files')
                                 #if repository key found in id then give it repository value
                                 if re.search(key, json_id):
                                     json_repository = value
-                                    index_lists['repository'].add(json_repository)
                                     break
 
                             #use Beautiful Soup function to extract thumbnail image id
@@ -295,16 +278,9 @@ def initialize_import_index(index_dir='index', files_directory='iiif_app/files')
 
         #commit data for all manifests to the Whoosh index
         writer.commit()
-        #convert sets to lists for JSON serialization
-        serializable_index_lists = {k: list(v) for k, v in index_lists.items()}
-
-        #save index lists for re-use
-        with open(index_lists_path, 'w', encoding='utf-8') as f:
-            json.dump(serializable_index_lists, f, indent=2, ensure_ascii=False)
-
 
         #open the Whoosh search index for searching with all manifest data included
         ix = open_dir(index_dir)
         #index has been updated, due to changes in files, record change in file
         update_index_timestamp()
-        return ix, index_lists
+        return ix

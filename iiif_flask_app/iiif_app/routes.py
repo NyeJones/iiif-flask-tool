@@ -6,12 +6,14 @@ from flask import Flask, render_template, request, redirect, url_for
 from flask import  current_app as app
 from flask_paginate import Pagination
 from whoosh.qparser import MultifieldParser, QueryParser
-from whoosh.query import And
+from whoosh.query import And, Term, Every
+from whoosh.sorting import FieldFacet
+from whoosh.collectors import FacetCollector
+from whoosh import collectors
 from whoosh import sorting
 from config import Config
 from iiif_app.forms import SearchForm
-from iiif_app.utils import custom_get, custom_get_int, extract_html_text, sidebar_counts
-
+from iiif_app.utils import custom_get, custom_get_int, extract_html_text, sidebar_counts, make_cache_key_excluding_page
 
 #get config data for site from file
 #iiif image uris
@@ -33,21 +35,20 @@ footer_data = Config.FOOTER
 #dictionary of repositories and identifiers
 repositories = Config.REPOSITORIES
 
-#access the Whoosh index, index lists for sidebar and cache from the app configuration
+#access the Whoosh index and cache from the app configuration
 ix = app.config['SEARCH_INDEX']
-index_lists = app.config['INDEX_LISTS']
 cache = app.config['CACHE']
 
 #the following section contains the app routes for the creation of the website
 #and rendering html templates
 #templates stored in 'templates' folder alongside the file for this script
-#cache used for routes that do not change due to user input
+#cache used for routes or items that do not change due to user input
 
 @app.context_processor
 def main():
     """
     Allows form variables invoked by SearchForm to be accessible across app
-    #SearchForm method allows us to utilise csrf protection on user searches
+    SearchForm method allows us to utilise csrf protection on user searches
     
     Returns:
     - A dictionary containing the 'form' variable, representing the SearchForm instance.
@@ -115,29 +116,35 @@ def search():
     form = SearchForm(request.form)
     #validate query for security
     if form.validate_on_submit():
-        #check if query is blank and string
+        #check if query is not blank and is string
         query = form.searched.data.strip()
         if query is not None and isinstance(query, str):
             #clean up query
             query = re.sub(r'\W+\s*', ' ', query).strip()
             #return query to results route with url parameters extracted above
             return redirect(url_for('results', query=query, repository=repository, language=language, material=material, author=author))
-
+            
     #if form not valid return invalid query route
     return redirect(url_for('invalid_query'))
 
 @app.route('/results')
 def results():
     """
-    Displays search results including those of previously searched parameters.
+    Handles search result display, including filters and pagination.
+
+    Retrieves search query and filters from the URL, executes a Whoosh search, applies
+    sidebar filters, caches sidebar results, and paginates the response.
 
     Returns:
-    - Rendered template with search results paginated.
-    - Includes results, previous queries from url, pagination, count and sidebar parameters.
+        Results html template with:
+        - Search results for current page.
+        - Active query/filter parameters.
+        - Pagination controls.
+        - Sidebar filter link data.
+        - Total result count.
     """
 
-    #use function to extract previous queries from url and perform data sanitation
-    #default to wildcard if no query
+    #extract main query and sidebar filters from URL query string
     user_query = custom_get(param='query')
     repository = custom_get(param='repository')
     language = custom_get(param='language')
@@ -147,137 +154,165 @@ def results():
     #put queries in dictionary for use below in sidebar function
     query_params = {'query': user_query, 'repository': repository, 'language': language, 'material': material, 'author': author}
 
-    #use Whoosh search index for search using query parameters
-    with ix.searcher() as searcher:
+    #get current page number, calculate result offset
+    page = custom_get_int('page')
+    per_page = 20
+    offset = (page - 1) * per_page
+
+    #use Whoosh search index to initialize search
+    with ix.searcher() as searcher:  
+        #create Whoosh parser for searchable fields using index
+        parser = MultifieldParser(['iiif_path', 'json_label', 'json_date', 'json_description', 'json_thumbnail', 'json_author'], ix.schema)     
         
-        #use function to safely extract page number from query string
-        page = custom_get_int('page')
-        #create additional page variables
-        per_page = 20
-        offset = (page - 1) * per_page
-        
-        #creates Whoosh parser for appropriate fields using search index
-        parser = MultifieldParser(['iiif_path', 'json_label', 'json_date', 'json_description', 'json_thumbnail', 'json_author'], ix.schema)
-        #formulates a search query using parser and user query
-        search_query = parser.parse(f'*{user_query}*')
+        #use Every() to match all documents if no user query is provided
+        if not user_query or user_query.strip() == "*":
+            search_query = Every()
+        #otherwise, parse the user query and append a wildcard (*) to allow partial matches
+        else:
+            search_query = parser.parse(f"{user_query}*")
 
         #filters added to this list from query string items
         filters = []
+        #for each sidebar filter check if a value is present in the query string
+        #if present, create a QueryParser for the corresponding indexed field
+        #append the parsed queries to the filters list.
+        if repository:
+            filters.append(QueryParser('json_repository', schema=ix.schema).parse(repository))
+        if language:
+            filters.append(QueryParser('json_language', schema=ix.schema).parse(language))
+        if material:
+            filters.append(QueryParser('json_material', schema=ix.schema).parse(material))
+        if author:
+            filters.append(QueryParser('json_author', schema=ix.schema).parse(author))         
 
-        #for each query string item create a parser specific to appropriate index field
-        #parse index for matches and add results to filters
-        #do for all sidebar sections and append to filters list
-        repository_parser = QueryParser('json_repository', schema=ix.schema)
-        repository_query = repository_parser.parse(repository)
-        filters.append(repository_query)
-        language_parser = QueryParser('json_language', schema=ix.schema)
-        language_query = language_parser.parse(language)
-        filters.append(language_query)
-        material_parser = QueryParser('json_material', schema=ix.schema)
-        material_query = material_parser.parse(material)
-        filters.append(material_query)
-        author_parser = QueryParser('json_author', schema=ix.schema)
-        author_query = author_parser.parse(author)
-        filters.append(author_query)         
-
-        #create combined query from filters and user query then search Whoosh index
-        search_query = And([search_query] + filters)
-        #extract the results and sort them by iiif path using natsorted for numerical sorting
-        results = searcher.search(search_query, limit=None)
-        results = natsorted(results, key=lambda x: x['iiif_path'])
-        #convert results to list of dictionaries
-        results = [dict(result) for result in results]
-
-        #total number of results
-        total = len(results)
-        #subset of results for appropriate page
+        #create combined query from filters and user query
+        query = And([search_query] + filters)
+        
+        #run the search with sorting and pagination
+        results = searcher.search(query, limit=offset + per_page, sortedby="iiif_path")
         results_subset = results[offset: offset + per_page]
-        #create pagination using Flask Paginate library, 
+
+        #generate cache key for query excluding page number
+        cache_key = make_cache_key_excluding_page()
+        cached_data = cache.get(cache_key)
+
+        #if query cached, load result count and sidebar links from cache
+        if cached_data:
+            total = cached_data['total_count']
+            repository_links = cached_data['sidebar']['repository']
+            language_links = cached_data['sidebar']['language']
+            material_links = cached_data['sidebar']['material']
+            author_links = cached_data['sidebar']['author']
+        #otherwise generate query count and sidebar links
+        else:
+            #count total matching results
+            total = searcher.search(query, limit=None).scored_length()
+
+            #generate sidebar filter links with counts
+            repository_links = sidebar_counts(query=query, query_params=query_params, searcher=searcher,
+                json_key='json_repository', item_key='repository')
+            language_links = sidebar_counts(query=query,  query_params=query_params, searcher=searcher,
+                json_key='json_language', item_key='language')
+            material_links = sidebar_counts(query=query, query_params=query_params, searcher=searcher,
+                json_key='json_material', item_key='material')
+            author_links = sidebar_counts(query=query, query_params=query_params, searcher=searcher,
+                json_key='json_author', item_key='author')
+
+            #cache sidebar link data and total count for future requests
+            cache.set(cache_key, {
+                'total_count': total,
+                'sidebar': {
+                    'repository': repository_links,
+                    'language': language_links,
+                    'material': material_links,
+                    'author': author_links
+                }
+            }, timeout=300)
+
+        #create pagination controls using Flask Paginate library 
         pagination = Pagination(page=page, per_page=per_page, total=total, record_name='results', css_framework='foundation')
 
-        #use function to get sidebar links for results page
-        #these will redirect to another results page composed of any existing queries and new query including sidebar value choice
-        repository_links = sidebar_counts(results=results, index_lists=index_lists, query_params=query_params, 
-            json_key='json_repository', item_key='repository')
-        language_links = sidebar_counts(results=results, index_lists=index_lists, query_params=query_params,
-            json_key='json_language', item_key='language')
-        material_links = sidebar_counts(results=results, index_lists=index_lists, query_params=query_params,
-            json_key='json_material', item_key='material')
-        author_links = sidebar_counts(results=results, index_lists=index_lists, query_params=query_params,
-            json_key='json_author', item_key='author')
-
-        #returns rendered template with results subset for page, query string parameters, pagination, 
-        #sidebar link data and total count of results 
-        return render_template("results.html", results=results_subset, query_params=query_params, pagination=pagination,
-            repository_links=repository_links, language_links=language_links, material_links=material_links, author_links=author_links, count=total)
+        #render search results template with supporting data
+        return render_template('results.html', results=results_subset, query_params=query_params, pagination=pagination, language_links=language_links, 
+            repository_links=repository_links, material_links=material_links, author_links=author_links, count=total)
 
 
 @app.route('/index')
 def list_files():
     """
-    Displays rendered template of all index files.
+    Handles index display, including filters and pagination.
+
+    Executes a query to list all entries in the Whoosh index.
+    Sidebar filter counts are generated and cached to improve performance.
 
     Returns:
-    - Rendered template with index files paginated.
-    - Includes results, wildcard query to show all results, pagination, count and sidebar parameters.
+        Index html template with:
+        - Index results for current page
+        - Query parameters (set to wildcard).
+        - Pagination controls.
+        - Sidebar filter link data.
+        - Total result count.
     """
+    
+    #get current page number, calculate result offset
+    page = custom_get_int('page')
+    per_page = 20
+    offset = (page - 1) * per_page
 
     #use Whoosh search index to generate all files
     with ix.searcher() as searcher:
 
-        #creates Whoosh parser for appropriate fields using search index
-        parser = MultifieldParser(['iiif_path', 'json_label', 'json_date', 'json_language', 'json_material',
-            'json_description', 'json_repository', 'json_thumbnail', 'json_author'], ix.schema)
-        #as we are locating all files, wildcard search used on all fields
-        query = parser.parse('*')
-
-        #use function to safely extract page number from query string
-        page = custom_get_int('page')
-        #create additional page variables
-        per_page = 20
-        offset = (page - 1) * per_page
-        
-        #cache key for the complete results set
-        cache_key_all_results = 'all_results'
-        all_results = cache.get(cache_key_all_results)
-        #if nothing cached assemble index
-        if all_results is None:
-            #perform search of index to generate all results using parser generated above
-            all_results = searcher.search(query, limit=None)
-            #sort results by iiif path using natsorted for numerical sorting
-            all_results = natsorted(all_results, key=lambda x: x['iiif_path'])
-            #convert results to list of dictionaries for caching
-            all_results = [dict(result) for result in all_results]
-            #cache the results for future use
-            cache.set(cache_key_all_results, json.dumps(all_results), timeout=86400)
-        else:
-            # Load results from cache if they are there
-            all_results = json.loads(all_results)
-        
-        #total number of results
-        total = len(all_results)
-        #subset of results for appropriate page
-        results_subset = all_results[offset: offset + per_page]
-        #create pagination using Flask Paginate library
-        pagination = Pagination(page=page, per_page=per_page, total=total, record_name='results', css_framework='foundation')
-
-        #query params dictionary created for current search of all, can be augmented for sidebar links below
+        #as we are locating all files, Whoosh Every used for query
+        query = Every('iiif_path')
+        #wildcard used for queries dictionary for sidebar function
         query_params = {'query': '*'}
 
-        #use function to get sidebar links for results page
-        #these will redirect to another results page composed of any existing queries and new query including sidebar value choice
-        repository_links = sidebar_counts(results=all_results, index_lists=index_lists, query_params=query_params, 
-            json_key='json_repository', item_key='repository')
-        language_links = sidebar_counts(results=all_results, index_lists=index_lists, query_params=query_params,
-            json_key='json_language', item_key='language')
-        material_links = sidebar_counts(results=all_results, index_lists=index_lists, query_params=query_params,
-            json_key='json_material', item_key='material')
-        author_links = sidebar_counts(results=all_results, index_lists=index_lists, query_params=query_params,
-            json_key='json_author', item_key='author')
+        #run the search with sorting and pagination
+        results = searcher.search(query, limit=offset + per_page, sortedby="iiif_path")
+        results_subset = results[offset: offset + per_page]
+        
+        #generate cache key for query excluding page number
+        cache_key = make_cache_key_excluding_page()
+        cached_data = cache.get(cache_key)
 
-        #returns rendered template with index subset for page, query string parameters, pagination, 
-        #sidebar link data and total count of results 
-        return render_template('index.html', results=results_subset, query=query, pagination=pagination, language_links=language_links, 
+        #if query cached, load index count and sidebar links from cache
+        if cached_data:
+            total = cached_data['total_count']
+            repository_links = cached_data['sidebar']['repository']
+            language_links = cached_data['sidebar']['language']
+            material_links = cached_data['sidebar']['material']
+            author_links = cached_data['sidebar']['author']
+        #otherwise generate query count and sidebar links
+        else:
+            #count total matching results
+            total = searcher.search(query, limit=None).scored_length()
+
+            #generate sidebar filter links with counts
+            repository_links = sidebar_counts(query=query, query_params=query_params, searcher=searcher,
+                json_key='json_repository', item_key='repository')
+            language_links = sidebar_counts(query=query,  query_params=query_params, searcher=searcher,
+                json_key='json_language', item_key='language')
+            material_links = sidebar_counts(query=query, query_params=query_params, searcher=searcher,
+                json_key='json_material', item_key='material')
+            author_links = sidebar_counts(query=query, query_params=query_params, searcher=searcher,
+                json_key='json_author', item_key='author')
+
+            #cache sidebar link data and total count for future requests
+            cache.set(cache_key, {
+                'total_count': total,
+                'sidebar': {
+                    'repository': repository_links,
+                    'language': language_links,
+                    'material': material_links,
+                    'author': author_links
+                }
+            }, timeout=300)
+
+        #create pagination controls using Flask Paginate library 
+        pagination = Pagination(page=page, per_page=per_page, total=total, record_name='results', css_framework='foundation')
+
+        #render index template with supporting data
+        return render_template('index.html', results=results_subset, query_params=query_params, pagination=pagination, language_links=language_links, 
             repository_links=repository_links, material_links=material_links, author_links=author_links, count=total)
 
 @app.route('/viewer.html', methods=['GET'])

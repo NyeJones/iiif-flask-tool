@@ -48,6 +48,7 @@ document.addEventListener('click', function(event) {
 });
 
 // Remove search queries and update the results
+
 function removeItem(key) {
     // Construct the item id
     var itemId = key + "_param_item";
@@ -81,6 +82,9 @@ function updateResults(key) {
     
     // Update value for key to wildcard to show all for that parameter
     urlObject.searchParams.set(key, '*');
+
+    // Remove the 'page' param to reset to first page
+    urlObject.searchParams.delete('page');
     
     // Redirect browser to new URL
     window.location.href = urlObject.href;

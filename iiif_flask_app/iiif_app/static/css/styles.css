@@ -552,9 +552,11 @@ footer .container-fluid {
     .info-box {
         max-width: 100%;
     }
+    
     .intro-box {
         max-width: 100%;
     }
+    
     .intro-fig {
         width: 100%;
         margin-left: 10px;
@@ -586,7 +588,7 @@ footer .container-fluid {
     .lang-switch-dropdown {
         padding-right: 8px;
     }
-   
+    
     .navbar .container-fluid ul:last-child {
         margin-left: initial;
         padding-left: 8px;
