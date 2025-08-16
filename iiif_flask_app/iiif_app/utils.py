@@ -358,6 +358,9 @@ def sidebar_counts(query, searcher, query_params, json_key, item_key):
 
     #iterate over each facet key and its list of matching doc_ids
     for raw_key, doc_ids in facet_groups.items():
+        #remove question marks and dashes from raw key to avoid duplication
+        raw_key = raw_key.replace('?', '')
+        raw_key = raw_key.replace('-', ' ')
         #if the facet key is a string containing a '|' separator,
         #it represents multiple values in one field
         if isinstance(raw_key, str) and '|' in raw_key:
