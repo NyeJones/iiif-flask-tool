@@ -57,6 +57,7 @@ def clean_text(text):
     """
     Clean the input text by replacing newlines and carriage returns with spaces,
     replacing specific characters, removing extra spaces, and trimming leading/trailing whitespaces.
+    Also strips out Unicode control characters, to prevent directional formatting disruption.
 
     Parameters:
     - text (str): The input text to be cleaned.
@@ -72,6 +73,7 @@ def clean_text(text):
     text = text.replace('\n', ' ').replace('\r', '')
     text = re.sub("ʼ", "'", text)
     text = re.sub(' +', ' ', text)
+    text = ''.join(ch for ch in text if unicodedata.category(ch)[0] != 'C')
     clean_text = text.strip()
     return clean_text
 
